@@ -1,0 +1,81 @@
+#
+# Default settings for the simulation
+#
+
+## Scenario settings
+Scenario.name = default_scenario
+Scenario.simulateConnections = true
+Scenario.updateInterval = 0.1
+#8h
+Scenario.endTime = 28800
+
+firstinterface.type = AutonomousGroupInterface
+firstinterface.transmitSpeeds = 6750k, 6750k, 6750k, 6000k, 6000k, 4500k, 3000k, 2250k, 1500k, 1125k, 750k, 250k, 125k
+# transmit speed of 2 Mbps = 250kBps
+firstinterface.transmitSpeed = 0
+firstinterface.transmitRange = 80
+firstinterface.rewiringProbability = 0.8
+firstinterface.maxGroupSize = 15
+
+# Time in seconds, during which an AP remains blacklisted after he destroyed his group
+# 300s = 5m
+firstinterface.blackListPreviousAPTime = 300
+
+Scenario.nrofHostGroups = 3
+
+Scenario.hostType = AutonomousHost
+
+# common settings for all groups
+Group.router = EpidemicRouter
+Group.bufferSize = 5M
+Group.waitTime = 0, 120
+#All nodes have the firstinterface inteface
+Group.nrofInterfaces = 1
+Group.interface1 = firstinterface
+#Group.msgTtl = 60
+Group.nrofHosts = 0
+Group.nrofApplications = 0
+
+Group.movementModel = ExternalMovement
+ExternalMovement.file = ee/test_movility.txt
+
+# Group A
+Group1.groupID = A
+Group1.nrofHosts = 3
+# walking speeds
+Group1.speed = 0.5, 1.5
+
+# Group B
+Group2.groupID = B
+Group2.nrofHosts = 2
+Group2.speed = 0.5, 1.5
+
+# Group C
+Group3.groupID = C
+Group3.nrofHosts = 2
+Group3.speed = 0.5, 1.5
+
+
+## Map based movement -movement model specific settings
+MapBasedMovement.nrofMapFiles = 2
+MapBasedMovement.mapFile1 = data/cluster/ferryroute.wkt
+MapBasedMovement.mapFile2 = data/cluster/origin.wkt
+
+Events.nrof = 0
+
+
+# how many reports to load
+Report.nrofReports = 3
+# length of the warm up period (simulated seconds)
+Report.warmup = 0
+# default directory of reports (can be overridden per Report with output setting)
+Report.reportDir = reports/
+# Report classes to load
+Report.report1 = MembershipReport
+Report.report2 = VisibilityReport
+Report.report3 = ResourcesReport
+ResourcesReport.granularity = 60
+
+
+## Optimization settings -- these affect the speed of the simulation
+Optimization.randomizeUpdateOrder = false

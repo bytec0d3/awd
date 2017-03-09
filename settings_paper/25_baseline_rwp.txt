@@ -1,0 +1,82 @@
+#-----------------------------------------------------------------------------------------------------------------------
+## Scenario settings
+#-----------------------------------------------------------------------------------------------------------------------
+Scenario.name = randomwaypoint
+Scenario.simulateConnections = true
+Scenario.updateInterval = 1
+Scenario.endTime = 90000
+
+#-----------------------------------------------------------------------------------------------------------------------
+## Movement model settings
+#-----------------------------------------------------------------------------------------------------------------------
+# seed for movement models' pseudo random number generator (default = 0)
+MovementModel.rngSeed = 1
+# World's size for Movement Models without implicit size (width, height; meters)
+MovementModel.worldSize = 1500, 2000
+# How long time to move hosts in the world before real simulation
+MovementModel.warmup = 0
+
+#-----------------------------------------------------------------------------------------------------------------------
+## Interface settings
+#-----------------------------------------------------------------------------------------------------------------------
+firstinterface.type = AutonomousGroupInterface
+firstinterface.transmitSpeed = 250M
+firstinterface.transmitRange = 30
+firstinterface.scanInterval = 0
+firstinterface.scanIntervalSearching = 0
+firstinterface.scanIntervalInGroup = 0
+firstinterface.maxFirstScanDelay = 5.0
+firstinterface.rewiringProbability = 0.4
+firstinterface.maxGroupSize = 4
+firstinterface.maxClients = 2
+firstinterface.blackListPreviousAPTime = 300
+
+#-----------------------------------------------------------------------------------------------------------------------
+## Groups settings
+#-----------------------------------------------------------------------------------------------------------------------
+Scenario.nrofHostGroups = 1
+Scenario.hostType = SimpleAutonomousHost
+
+# common settings for all groups
+Group.router = EpidemicRouter
+Group.bufferSize = 5M
+Group.waitTime = 0, 120
+#All nodes have the firstinterface inteface
+Group.nrofInterfaces = 1
+Group.interface1 = firstinterface
+#Group.msgTtl = 60
+Group.nrofHosts = 0
+Group.nrofApplications = 0
+
+# Group A
+Group1.groupID = A
+Group1.nrofHosts = 25
+#####
+## Mobility model: use ExternalMovement in order to use external mobility traces
+# RandomWaypoint
+#####
+Group1.movementModel = ExternalMovement
+ExternalMovement.file = settings_paper/traces/25_rwp.dat
+# walking speeds
+Group1.speed = 0.0, 1.8
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+## Events settings
+#-----------------------------------------------------------------------------------------------------------------------
+Events.nrof = 0
+
+#-----------------------------------------------------------------------------------------------------------------------
+## Reports settings
+#-----------------------------------------------------------------------------------------------------------------------
+Report.nrofReports = 2
+Report.warmup = 0
+Report.reportDir = reports/
+Report.report1 = Autonomous_ExploitReport
+Report.report2 = Autonomous_BatteryReport
+#Report.report1 = Autonomous_NodePositionReport
+
+#-----------------------------------------------------------------------------------------------------------------------
+## Optimization settings -- these affect the speed of the simulation
+#-----------------------------------------------------------------------------------------------------------------------
+Optimization.randomizeUpdateOrder = false
