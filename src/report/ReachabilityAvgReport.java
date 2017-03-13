@@ -30,8 +30,8 @@ public class ReachabilityAvgReport extends SnapshotReport {
 
         float jaccardIndex = 0.0f;
 
-        if(host.getGroup() != null && host.getInterface().getNearbyNodes() != null)
-            jaccardIndex = AutonomousUtils.jaccardIndex(host.getInterface().getNearbyNodes(), host.getGroup());
+        //if(host.getGroup() != null && host.getInterface().getNearbyNodes() != null)
+            //jaccardIndex = AutonomousUtils.jaccardIndex(host.getInterface().getNearbyNodes(), host.getGroup());
 
         return jaccardIndex;
     }

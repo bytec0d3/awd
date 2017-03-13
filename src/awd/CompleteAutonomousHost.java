@@ -40,6 +40,24 @@ public class CompleteAutonomousHost extends AutonomousHost {
 
     }
 
+    public void update(boolean simulateConnections) {
+
+        super.update(simulateConnections);
+
+        if(this.getCurrentStatus() == HOST_STATUS.AP && this.getGroup() != null && this.getGroup().size() > 0)
+            checkGroupResources();
+    }
+
+    @Override
+    void takeDecision() {
+
+    }
+
+    private void checkGroupResources(){
+
+        if(this.startGroupResources - this.contextManager.getBatteryLevel() >= MAX_RES_FOR_GROUP)
+            destroyGroup();
+    }
 
 
     //------------------------------------------------------------------------------------------------------------------
@@ -126,10 +144,10 @@ public class CompleteAutonomousHost extends AutonomousHost {
 
         boolean visible = false;
 
-        for(DTNHost nearbyHost : getInterface().getNearbyNodes()){
-            if(nearbyHost.getAddress() == address){
+        for(NetworkInterface nearbyInterface : getInterface().getNearbyInterfaces()){
+            if(nearbyInterface.getHost().getAddress() == address){
                 visible = true;
-                this.hostToMerge = (AutonomousHost)nearbyHost;
+                this.hostToMerge = (AutonomousHost)nearbyInterface.getHost();
                 break;
             }
         }

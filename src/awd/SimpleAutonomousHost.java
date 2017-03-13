@@ -32,12 +32,6 @@ public class SimpleAutonomousHost extends AutonomousHost {
         super(msgLs, movLs, groupId, interf, comBus, mmProto, mRouterProto);
     }
 
-    public void update(boolean simulateConnections) {
-
-        super.update(simulateConnections);
-    }
-
-    @Override
     public void evaluateNearbyNodes(Collection<NetworkInterface> nodes){
 
         // Look for an AP just if I'm not already connected to someone
@@ -71,5 +65,11 @@ public class SimpleAutonomousHost extends AutonomousHost {
                 }
             }
         }
+    }
+
+    @Override
+    void takeDecision() {
+        Logger.print(this, "Evaluate nearby nodes");
+        evaluateNearbyNodes(getInterface().getNearbyInterfaces());
     }
 }
