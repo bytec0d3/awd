@@ -61,6 +61,7 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
     }
 
     public AutonomousGroupInterface getInterface(){
+
         return (AutonomousGroupInterface) getInterface(1);
     }
 

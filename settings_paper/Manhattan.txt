@@ -1,0 +1,152 @@
+#-----------------------------------------------------------------------------------------------------------------------
+## Scenario settings
+#-----------------------------------------------------------------------------------------------------------------------
+Scenario.name = manhattan
+Scenario.simulateConnections = true
+Scenario.updateInterval = 1
+Scenario.endTime = 90000
+
+Events.nrof = 0
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+## Interface settings
+#-----------------------------------------------------------------------------------------------------------------------
+firstinterface.type = AutonomousGroupInterface
+firstinterface.transmitSpeed = 250M
+firstinterface.transmitRange = 30
+firstinterface.scanInterval = 0
+firstinterface.scanIntervalSearching = 0
+firstinterface.scanIntervalInGroup = 0
+firstinterface.maxFirstScanDelay = 5.0
+firstinterface.rewiringProbability = 0.4
+firstinterface.maxClients = 4
+firstinterface.blackListPreviousAPTime = 300
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+## Groups settings
+#-----------------------------------------------------------------------------------------------------------------------
+
+Scenario.nrofHostGroups = 3
+Scenario.hostType = SimpleAutonomousHost
+
+#---------------------------------------
+### common settings for all groups
+#---------------------------------------
+
+Group.movementModel = MapBasedMovement
+Group.router = EpidemicRouter
+Group.bufferSize = 100M
+Group.transmitRange = 10
+Group.nrofInterfaces = 1
+Group.interface1 = firstinterface
+Group.waitTime = 0, 0
+# walking speeds
+Group.speed = 0.5, 1.5
+
+Group.nrOfOffices = 200
+Group.workDayLength = 28800
+Group.probGoShoppingAfterWork = 0.5
+Group.nrOfMeetingSpots = 24
+
+Group.officeWaitTimeParetoCoeff = 0.5
+Group.officeMinWaitTime = 10
+Group.officeMaxWaitTime = 100000
+Group.officeSize = 100
+
+Group.nrofHosts = 0
+
+Group.timeDiffSTD = 7200
+Group.minGroupSize = 1
+Group.maxGroupSize = 3
+Group.minAfterShoppingStopTime = 3600
+Group.maxAfterShoppingStopTime = 7200
+
+#---------------------------------------
+
+
+Group1.groupID = b
+Group1.speed = 7, 10
+Group1.waitTime = 10, 30
+Group1.nrofHosts = 18
+Group1.nrofInterfaces = 0
+Group1.movementModel = BusMovement
+Group1.routeFile = data/Manhattan/bus.wkt
+Group1.routeType = 2
+Group1.busControlSystemNr = 8
+
+Group2.groupID = P
+Group2.waitTime = 0, 0
+Group2.nrofHosts = 1000
+Group2.movementModel = WorkingDayMovement
+Group2.busControlSystemNr = 8
+Group2.speed = 0.8, 1.4
+Group2.ownCarProb = 0.5
+Group2.shoppingControlSystemNr = 8
+Group2.nrOfOffices = 200
+Group2.nrOfMeetingSpots = 24
+
+Group3.groupID = T
+Group3.nrofInterfaces = 0
+Group3.movementModel = ShortestPathMapBasedMovement
+Group3.waitTime = 100, 300
+Group3.speed = 7, 10
+Group3.nrofHosts = 10
+
+#-----------------------------------------------------------------------------------------------------------------------
+## ExternalEvents settings
+#-----------------------------------------------------------------------------------------------------------------------
+# max number of external events to preload (default = 500)
+#ExternalEvents.nrofPreload = 500
+# path to external events file
+#ExternalEvents.filePath = ee/700_events_1000_nodes_700ks.txt
+
+#-----------------------------------------------------------------------------------------------------------------------
+## MovementModel settings
+#-----------------------------------------------------------------------------------------------------------------------
+# seed for movement models' pseudo random number generator (default = 0)
+#MovementModel.rngSeed = [2; 8372]
+MovementModel.rngSeed = 8372
+
+MovementModel.worldSize = 10000, 8000
+# How long time to move hosts in the world before real simulation
+#MovementModel.warmup = 43000
+MovementModel.warmup = 0
+
+## Map based movement -movement model specific settings
+MapBasedMovement.nrofMapFiles = 1
+MapBasedMovement.mapFile1 = data/Manhattan/roads.wkt
+
+#-----------------------------------------------------------------------------------------------------------------------
+## Reports settings
+#-----------------------------------------------------------------------------------------------------------------------
+Report.nrofReports = 8
+#Report.reportDir = [reports/Manhattan/1; reports/Manhattan/2; reports/Manhattan/3; reports/Manhattan/4; reports/Manhattan/5]
+Report.reportDir = reports/
+
+# Report classes to load
+Report.report1 = InterContactTimesReport
+Report.report2 = ContactTimesReport
+Report.report3 = UniqueEncountersReport
+Report.report4 = TotalEncountersReport
+Report.report5 = EncountersVSUniqueEncountersReport
+Report.report6 = ContactsDuringAnICTReport
+Report.report7 = MessageStatsReport
+Report.report8 = ContactsPerHourReport
+
+#-----------------------------------------------------------------------------------------------------------------------
+## Optimization settings -- these affect the speed of the simulation
+#-----------------------------------------------------------------------------------------------------------------------
+Optimization.connectionAlg = 2
+Optimization.cellSizeMult = 5
+Optimization.randomizeUpdateOrder = true
+
+#-----------------------------------------------------------------------------------------------------------------------
+## GUI settings
+#-----------------------------------------------------------------------------------------------------------------------
+GUI.UnderlayImage.fileName = data/helsinki_underlay.png
+GUI.UnderlayImage.offset = 64, 20
+GUI.UnderlayImage.scale = 4.75
+GUI.UnderlayImage.rotate = -0.015
+GUI.EventLogPanel.nrofEvents = 200

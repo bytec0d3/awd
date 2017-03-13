@@ -126,15 +126,16 @@ public class NodeGraphic extends PlayFieldGraphic {
 
 
 		/* draw node rectangle */
-		if(node instanceof AutonomousHost &&
+		if(node instanceof AutonomousHost && node.getInterfaces().size() > 0 &&
 				((AutonomousHost) node).getService().getHostStatus() == AutonomousHost.HOST_STATUS.AP &&
 				((AutonomousHost) node).getGroup() != null &&
 				((AutonomousHost) node).getGroup().size() > 0){
             g2.setColor(Color.RED);
-		}else if(node instanceof AutonomousHost &&
+		}else if(node instanceof AutonomousHost && node.getInterfaces().size() > 0 &&
 				((AutonomousHost) node).getService().getHostStatus() == AutonomousHost.HOST_STATUS.OFFLINE) {
 			g2.setColor(Color.BLACK);
-		}else if(node instanceof AutonomousHost && ((AutonomousHost)node).getInterface().isScanning())
+		}else if(node instanceof AutonomousHost && node.getInterfaces().size() > 0 &&
+				((AutonomousHost)node).getInterface().isScanning())
 			g2.setColor(Color.GREEN);
 		else
 			g2.setColor(Color.BLUE);
@@ -149,7 +150,7 @@ public class NodeGraphic extends PlayFieldGraphic {
 
 		if (drawNodeName) {
 
-			if(node instanceof AutonomousHost &&
+			if(node instanceof AutonomousHost && node.getInterfaces().size() > 0 &&
 					((AutonomousHost) node).getService().getHostStatus() == AutonomousHost.HOST_STATUS.OFFLINE){
 
 				g2.setColor(Color.BLACK);
