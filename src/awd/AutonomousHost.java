@@ -9,6 +9,12 @@ import java.util.*;
 
 public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHost>{
 
+    private static final String SETTINGS_NAMESPACE = "AutonomousHost";
+    private static final String SETTINGS_DECISION_TIME_S = "decisionTimeS";
+
+    private double secondsToTakeDecision;
+    private double lastDecision = 0;
+
     static final String GROUP_INFO_MESSAGE_ID = "g";
     static final String GROUP_BYE_MESSAGE_ID = "gb";
     static final String VISIBILITY_QUERY_MESSAGE_ID = "vq";
@@ -17,18 +23,19 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
 
     public enum HOST_STATUS {CONNECTED, BUSY, AP, OFFLINE}
 
-    private static final float RES_TO_GO_OFFLINE = 0.0f;       // 30%
+    private static final float RES_TO_GO_OFFLINE = 0.0f;
 
     private HOST_STATUS currentStatus;
-    private ContextManager contextManager;
+    ContextManager contextManager;
 
     //Group infos
     private String groupName;
     private DTNHost currentAP;
     private Set<DTNHost> group;
+
     // The maximum percentage of resources used by the AP to maintain the group active
-    private static final float MAX_RES_FOR_GROUP = 0.05f; //0.05
-    private float startGroupResources;
+    static final float MAX_RES_FOR_GROUP = 0.05f; //0.05
+    float startGroupResources;
 
     /**
      * Creates a new DTNHost.
@@ -54,6 +61,14 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
         this.contextManager = new ContextManager();
         this.groupName = this.toString();
         this.currentAP = this;
+
+        parseSettings();
+    }
+
+    private void parseSettings(){
+
+        Settings s = new Settings(SETTINGS_NAMESPACE);
+        this.secondsToTakeDecision = s.getDouble(SETTINGS_DECISION_TIME_S);
     }
 
     public String toString(){
@@ -82,9 +97,13 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
 
         checkMyResources();
 
-        //if(this.getCurrentStatus() == HOST_STATUS.AP && this.getGroup() != null && this.getGroup().size() > 0)
-        //    checkGroupResources();
+        if(SimClock.getTime() - lastDecision >= secondsToTakeDecision){
+            takeDecision();
+            this.lastDecision = SimClock.getIntTime();
+        }
     }
+
+    abstract void takeDecision();
 
     //-----------------------------------------------------------------------------------------------
     // CONNECTIONS MENAGEMENT
@@ -98,15 +117,13 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
     public void connectionUp(Connection con) {
         super.connectionUp(con);
 
-        this.getInterface().setScanIntervalWhenInGroup();
-
-        //Logger.print(this, con.fromNode + " ---> " + con.toNode);
+        Logger.print(this, con.fromNode + " ---> " + con.toNode);
 
         //If this is an incoming connection
         if(con.fromNode != this){
 
             if(getGroup() != null && getGroup().size() == this.getInterface().getMaxClients()) {
-                //Logger.print(this, "Rejecting connection from "+con.fromNode);
+                Logger.print(this, "Rejecting connection from "+con.fromNode);
                 getInterface().disconnect(con, ((AutonomousHost) con.fromNode).getInterface());
                 getInterface().connections.remove(con);
             }else {
@@ -300,13 +317,6 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
         }
     }
 
-    private void checkGroupResources(){
-
-        //TODO: Qui viene considerata solo la batteria. Forse è il caso di considerare tutte le risorse?
-        if(this.startGroupResources - this.contextManager.getBatteryLevel() >= MAX_RES_FOR_GROUP)
-            destroyGroup();
-    }
-
     void destroyGroup(){
         if(this.getCurrentStatus() == HOST_STATUS.AP) sendGroupBye();
         this.getInterface().leaveCurrentGroup();
@@ -336,7 +346,6 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
         this.startGroupResources = 0;
         setCurrentAP(this);
         setCurrentStatus(HOST_STATUS.AP);
-        this.getInterface().setScanIntervalSearching();
 
         //Logger.printMembership(this);
     }

@@ -13,13 +13,9 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
     private static final String REWIRING_PROB = "rewiringProbability";
     private static final String MAX_CLIENTS_SIZE_ENTRY = "maxClients";
     private static final String MAX_TIME_TO_CONNECT = "maxTimeToConnect";
-    private static final String SCAN_INTERVAL_IN_GROUP = "scanIntervalInGroup";
-    private static final String SCAN_INTERVAL_SEARCHING = "scanIntervalSearching";
     private static final String MAX_FIRST_SCAN_DELAY = "maxFirstScanDelay";
 
     private static final double SCAN_INTERVAL_NEVER = Double.MAX_VALUE;
-    private double scanIntervalInGroup = 300;       // 5 minutes
-    private double scanIntervalSearching = 60;      // 1 minute
     private int blackListPreviousAPTime = 300;      // 5 minutes
     private double maxFirstScanDelay;
     private boolean firstScanDelay = false;
@@ -29,14 +25,13 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
     private int maxClients = 10;
 
     private AutonomousHost myHost = (AutonomousHost) this.host;
+    private Collection<NetworkInterface> nearbyInterfaces;
     private HashMap<DTNHost, Double> blackList = new HashMap<>();
 
     private double scanInterval;
     private double lastScanTime;
 
     private Random random = new Random();
-
-    private List<DTNHost> nearbyNodes = new ArrayList<>();
 
     //Lazy connect
     private double maxTimeToConnect = 0;
@@ -64,14 +59,6 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
         if(s.contains(MAX_TIME_TO_CONNECT))
             this.maxTimeToConnect = s.getDouble(MAX_TIME_TO_CONNECT);
 
-        if(s.contains(SCAN_INTERVAL_SEARCHING))
-            this.scanIntervalSearching = s.getDouble(SCAN_INTERVAL_SEARCHING);
-
-        if(s.contains(SCAN_INTERVAL_IN_GROUP))
-            this.scanIntervalInGroup = s.getDouble(SCAN_INTERVAL_IN_GROUP);
-
-        //if(scanIntervalSearching != 0)
-            //this.scanInterval = new Random().nextInt((int)scanIntervalSearching);
         if(s.contains(MAX_FIRST_SCAN_DELAY)) {
             this.firstScanDelay = true;
             this.maxFirstScanDelay = s.getDouble(MAX_FIRST_SCAN_DELAY);
@@ -92,8 +79,6 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
         this.blackListPreviousAPTime = ni.blackListPreviousAPTime;
         this.maxClients = ni.maxClients;
         this.maxTimeToConnect = ni.maxTimeToConnect;
-        this.scanIntervalSearching = ni.scanIntervalSearching;
-        this.scanIntervalInGroup = ni.scanIntervalInGroup;
         this.maxFirstScanDelay = ni.maxFirstScanDelay;
         if(ni.firstScanDelay) {
             this.firstScanDelay = true;
@@ -106,7 +91,7 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
         return new AutonomousGroupInterface(this);
     }
 
-    public List<DTNHost> getNearbyNodes(){return this.nearbyNodes; }
+    public Collection<NetworkInterface> getNearbyInterfaces(){return this.nearbyInterfaces; }
     public int getMaxClients(){return this.maxClients;}
 
     /**
@@ -142,16 +127,9 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
             }
         }
 
-        if(isScanning()) myHost.evaluateNearbyNodes(optimizer.getNearInterfaces(this));
-
-        /*
-        if(this.interfaceToConnect != null) connect(this.interfaceToConnect);
-        else if(myHost.getCurrentStatus() != AutonomousHost.HOST_STATUS.OFFLINE)
-            // Then find new possible connections
-            if(this.simpleNearbyEvaluation)
-                simpleEvaluateNearbyInterfaces(optimizer.getNearInterfaces(this));
-            else
-                evaluateNearbyInterfaces(optimizer.getNearInterfaces(this));*/
+        if(isScanning()){
+            this.nearbyInterfaces = optimizer.getNearInterfaces(this);
+        }
     }
 
     public Set<String> getNearbyNodesIds(){
@@ -170,14 +148,8 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
     }
 
     //------------------------------------------------------------------------------------------------------------------
-    // SCAN INTERVAL SERVICEMENAGEMENT
+    // SCAN INTERVAL
     //------------------------------------------------------------------------------------------------------------------
-    public void setScanIntervalWhenInGroup(){
-        this.scanInterval = this.scanIntervalInGroup;
-    }
-    public void setScanIntervalSearching(){
-        this.scanInterval = this.scanIntervalSearching;
-    }
     public void stopScan(){
         this.scanInterval = SCAN_INTERVAL_NEVER;
     }
@@ -239,9 +211,6 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
                 lastScanTime = simTime; /* time to start the next scan round */
                 //myHost.scanningEvent();
 
-                if(this.scanInterval < scanIntervalSearching)
-                    setScanIntervalSearching();
-
                 //Logger.print(getHost(), "Scanning");
 
                 return true;
@@ -294,7 +263,7 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
         return (singlets.size() == 0) ? null : singlets;
     }
 
-    private Object[] extractGroups(Collection<NetworkInterface> nodes){
+    /*private Object[] extractGroups(Collection<NetworkInterface> nodes){
 
         this.nearbyNodes = new ArrayList<>();
 
@@ -354,10 +323,10 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
      * Evaluate visible services.
      *
      * @param nodes     List of visible interfaces (nodes)
-     */
+
     private void evaluateNearbyInterfaces(Collection<NetworkInterface> nodes){
 
-        /*Object[] groups = extractGroups(nodes);
+        Object[] groups = extractGroups(nodes);
         HashMap<Integer, NetworkInterface> nearbyGroups = (HashMap<Integer, NetworkInterface>) groups[0];
         List<AutonomousHost> nearbySinglets = (List<AutonomousHost>) groups[1];
 
@@ -372,7 +341,7 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
                 NetworkInterface bestCandidate = getBestCandidate(nearbyGroups, nearbySinglets);
                 if(bestCandidate != null) connect(bestCandidate);
             }
-        }*/
+        }
     }
 
     private void simpleEvaluateNearbyInterfaces(Collection<NetworkInterface> nodes){
@@ -384,7 +353,7 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
         if (this.connections.size() == 0) {
             NetworkInterface bestCandidate = getBestCandidate(nearbyGroups, nearbySinglets);
             if(bestCandidate != null) connect(bestCandidate);
-        }*/
+        }
     }
 
     /*private void evaluateMarge(HashMap<Integer, NetworkInterface> nearbyGroups){
@@ -398,7 +367,7 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
                 candidateHost.getService().getGroupMembers().size() + myHost.getGroup().size() < maxGroupSize) {
             myHost.sendVisibilityQuery(candidateHost);
         }
-    }*/
+    }
 
     private boolean rewireConnections(HashMap<Integer, NetworkInterface> groups){
         boolean rewired = false;
@@ -424,7 +393,7 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
         }
 
         return rewired;
-    }
+    }*/
 
     public void leaveCurrentGroup(){
 
@@ -436,9 +405,6 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
             disconnect(con,anotherInterface);
             connections.remove(i);
         }
-
-        this.setScanIntervalSearching();
-
     }
 
     /**

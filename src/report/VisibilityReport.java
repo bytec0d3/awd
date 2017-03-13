@@ -21,7 +21,7 @@ public class VisibilityReport extends Report implements UpdateListener {
                 MembershipGroup membershipGroup = new MembershipGroup();
                 if(nodesMembership.containsKey(h)) membershipGroup = nodesMembership.get(h);
 
-                membershipGroup.update(((AutonomousHost)h).getInterface().getNearbyNodes());
+                //membershipGroup.update(((AutonomousHost)h).getInterface().getNearbyNodes());
                 nodesMembership.put(h, membershipGroup);
             }
         }

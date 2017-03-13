@@ -32,6 +32,11 @@ firstinterface.maxClients = 2
 firstinterface.blackListPreviousAPTime = 300
 
 #-----------------------------------------------------------------------------------------------------------------------
+## AutonomousHost settings
+#-----------------------------------------------------------------------------------------------------------------------
+AutonomousHost.decisionTimeS = 60
+
+#-----------------------------------------------------------------------------------------------------------------------
 ## Groups settings
 #-----------------------------------------------------------------------------------------------------------------------
 Scenario.nrofHostGroups = 1
@@ -55,8 +60,8 @@ Group1.nrofHosts = 25
 ## Mobility model: use ExternalMovement in order to use external mobility traces
 # RandomWaypoint
 #####
-Group1.movementModel = ExternalMovement
-ExternalMovement.file = settings_paper/traces/25_rwp.dat
+Group1.movementModel = RandomWaypoint
+#ExternalMovement.file = settings_paper/traces/25_rwp.dat
 # walking speeds
 Group1.speed = 0.0, 1.8
 
