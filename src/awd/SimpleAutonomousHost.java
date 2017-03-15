@@ -69,7 +69,6 @@ public class SimpleAutonomousHost extends AutonomousHost {
 
     @Override
     void takeDecision() {
-        Logger.print(this, "Evaluate nearby nodes");
         evaluateNearbyNodes(getInterface().getNearbyInterfaces());
     }
 }

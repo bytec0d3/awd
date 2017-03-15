@@ -2,11 +2,10 @@ package awd;
 
 import core.*;
 import movement.MovementModel;
+import org.apache.commons.collections4.CollectionUtils;
 import routing.MessageRouter;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by mattia on 02/03/17.
@@ -16,6 +15,8 @@ public class CompleteAutonomousHost extends AutonomousHost {
     //Merge
     private AutonomousHost hostToMerge;
     private int mergePositiveResponses;
+
+    private Random random;
 
 
     /**
@@ -33,11 +34,74 @@ public class CompleteAutonomousHost extends AutonomousHost {
                                   List<NetworkInterface> interf, ModuleCommunicationBus comBus, MovementModel mmProto,
                                   MessageRouter mRouterProto) {
         super(msgLs, movLs, groupId, interf, comBus, mmProto, mRouterProto);
+
+        this.random = new Random();
     }
 
     @Override
     public void evaluateNearbyNodes(Collection<NetworkInterface> nodes) {
 
+        if(getCurrentStatus() == HOST_STATUS.AP && this.getGroup() == null) {
+
+            AutonomousHost candidate = null;
+
+            if (nodes != null) {
+                List<AutonomousHost> availableGroups = getInterface().getAvailableGroups(nodes);
+
+                if (availableGroups != null) {
+
+                    availableGroups.sort(Comparators.groupComparator);
+                    candidate = availableGroups.get(availableGroups.size() - 1);
+
+                } else {
+
+                    List<AutonomousHost> availableSinglets = getInterface().getAvailableSinglets(nodes);
+                    if (availableSinglets != null) {
+                        availableSinglets.add(this);
+                        availableSinglets.sort(Comparators.contextAndNameComparator);
+                        candidate = availableSinglets.get(availableSinglets.size() - 1);
+                    }
+                }
+
+                if (candidate != null && candidate != this) {
+                    forceConnection(candidate, candidate.getInterface().getInterfaceType(), true);
+                }
+            }
+        }
+    }
+
+    /**
+     * Evaluate if the node should become a traveller or not.
+     * If it becomes a traveller, first it adds the previous AP in blacklist, and then it performs the disconnection
+     * from the current group.
+     */
+    private void evaluateTravelling(){
+
+        double r = random.nextDouble();
+        if(r <= this.travellingProb / this.getGroup().size()){
+            Logger.print(this, "R: "+r+" - th: "+this.travellingProb / this.getGroup().size());
+            //Logger.print(this, "Ok, lets travel");
+            getInterface().addPreviousAPInBlacklist(this.getCurrentAP());
+            destroyGroup();
+        }
+
+    }
+
+    private void evaluateMerge(){
+
+        int minSize = (this.getGroup().size() / 2) + 1;
+
+        List<AutonomousHost> availableGroups = getInterface().getAvailableGroups(getInterface().getNearbyInterfaces());
+        if(availableGroups != null) {
+            availableGroups.removeIf((AutonomousHost host) -> host.getService().getAvailableSlots() >= minSize);
+
+            if (availableGroups.size() != 0) {
+                AutonomousHost hostToMerge = Collections.max(availableGroups,
+                        Comparator.comparing(host -> host.getService().getGroupMembers().size()));
+
+                sendVisibilityQuery(hostToMerge);
+            }
+        }
     }
 
     public void update(boolean simulateConnections) {
@@ -48,15 +112,36 @@ public class CompleteAutonomousHost extends AutonomousHost {
             checkGroupResources();
     }
 
+    private void checkGroupResources(){
+
+        if(this.startGroupResources - this.contextManager.getBatteryLevel() >= MAX_RES_FOR_GROUP) {
+            Logger.print(this, "Group resources limit reached");
+            destroyGroup();
+        }
+    }
+
     @Override
     void takeDecision() {
 
-    }
+        if(getCurrentStatus() == HOST_STATUS.AP && this.getGroup() == null){
+            evaluateNearbyNodes(getInterface().getNearbyInterfaces());
 
-    private void checkGroupResources(){
+        }else{
 
-        if(this.startGroupResources - this.contextManager.getBatteryLevel() >= MAX_RES_FOR_GROUP)
-            destroyGroup();
+            Collection<DTNHost> currentGroup = new ArrayList<>();
+            currentGroup.addAll(this.getGroup());
+            if(CollectionUtils.subtract(getInterface().getNearbyHosts(), currentGroup).size() != 0) {
+                // If I am a client and there are other groups in the nearby, evaluate to become a traveller
+                if (getCurrentStatus() == HOST_STATUS.CONNECTED) {
+                    evaluateTravelling();
+
+                } else if (getCurrentStatus() == HOST_STATUS.AP) {
+                    // If I am a GO, evaluate to merge my group with another one
+                    evaluateMerge();
+                }
+            }
+        }
+
     }
 
 

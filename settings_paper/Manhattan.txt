@@ -14,7 +14,7 @@ Events.nrof = 0
 #-----------------------------------------------------------------------------------------------------------------------
 firstinterface.type = AutonomousGroupInterface
 firstinterface.transmitSpeed = 250M
-firstinterface.transmitRange = 30
+firstinterface.transmitRange = 50
 firstinterface.scanInterval = 0
 firstinterface.scanIntervalSearching = 0
 firstinterface.scanIntervalInGroup = 0
@@ -23,6 +23,10 @@ firstinterface.rewiringProbability = 0.4
 firstinterface.maxClients = 4
 firstinterface.blackListPreviousAPTime = 300
 
+#-----------------------------------------------------------------------------------------------------------------------
+## AutonomousHost settings
+#-----------------------------------------------------------------------------------------------------------------------
+AutonomousHost.decisionTimeS = 60
 
 #-----------------------------------------------------------------------------------------------------------------------
 ## Groups settings
@@ -53,7 +57,7 @@ Group.nrOfMeetingSpots = 24
 Group.officeWaitTimeParetoCoeff = 0.5
 Group.officeMinWaitTime = 10
 Group.officeMaxWaitTime = 100000
-Group.officeSize = 100
+Group.officeSize = 50
 
 Group.nrofHosts = 0
 

@@ -18,7 +18,8 @@ public class ContextManager {
     private static final double SCAN_INTERCEPT = 1.0;
 
 
-    private float battery, cpu, memory;
+    private float battery;
+    private int reachableNodes;
 
 
     private Integer lastUpdate = null;
@@ -27,17 +28,22 @@ public class ContextManager {
 
     public ContextManager(){
 
-        this.battery = this.cpu = this.memory = 1.0f;
+        this.battery = 1.0f;
+        this.reachableNodes = 0;
     }
 
     //public void updateContextAfterScanning(){
     //this.battery -= BATTERY_DROP_SCANNING;
     //}
 
-    public void updateContext(AutonomousHost.HOST_STATUS currentStatus, Set<DTNHost> group){
+    public void updateContext(AutonomousHost.HOST_STATUS currentStatus,
+                              Set<DTNHost> group,
+                              int reachableNodes){
 
         int currentTime = (int) SimClock.getTime();
         double drop = 0;
+
+        this.reachableNodes = reachableNodes;
 
         if(this.lastUpdate == null || currentTime > this.lastUpdate) {
 
@@ -57,9 +63,6 @@ public class ContextManager {
                         break;
                 }
 
-                //Logger.print(null, ((lastGroupSize == 0 || lastGroupSize == null) ? "SCAN" : lastStatus) +
-                 //       " : " + String.format("%2.2f",drop) + " ("+String.format("%2.2f",battery*100)+"%)");
-
                 this.battery -= drop;
             }
 
@@ -70,7 +73,7 @@ public class ContextManager {
     }
 
     public Float evalContext(){
-        return this.battery*0.33f*this.cpu*0.33f*this.memory*0.33f;
+        return this.battery*0.5f+this.reachableNodes*0.5f;
     }
     public float getBatteryLevel(){ return this.battery; }
 

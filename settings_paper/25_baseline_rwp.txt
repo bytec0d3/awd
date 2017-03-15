@@ -29,7 +29,7 @@ firstinterface.maxFirstScanDelay = 5.0
 firstinterface.rewiringProbability = 0.4
 firstinterface.maxGroupSize = 4
 firstinterface.maxClients = 2
-firstinterface.blackListPreviousAPTime = 300
+firstinterface.BL_prevAP_S = 300
 
 #-----------------------------------------------------------------------------------------------------------------------
 ## AutonomousHost settings

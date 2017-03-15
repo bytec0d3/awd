@@ -9,16 +9,16 @@ import java.util.*;
 public class AutonomousGroupInterface extends SimpleBroadcastInterface {
 
     //Settings fields
-    private static final String BLACKLIST_PREVIOUS_AP_TIME = "blackListPreviousAPTime";
-    private static final String REWIRING_PROB = "rewiringProbability";
+    private static final String BLACKLIST_PREVIOUS_AP_TIME = "BL_prevAP_S";
     private static final String MAX_CLIENTS_SIZE_ENTRY = "maxClients";
     private static final String MAX_TIME_TO_CONNECT = "maxTimeToConnect";
     private static final String MAX_FIRST_SCAN_DELAY = "maxFirstScanDelay";
 
     private static final double SCAN_INTERVAL_NEVER = Double.MAX_VALUE;
-    private int blackListPreviousAPTime = 300;      // 5 minutes
+    private int blackListPreviousAPTime;
     private double maxFirstScanDelay;
     private boolean firstScanDelay = false;
+    private double timeToStartScan = 0;
 
     private double rewiringProbability = 0.8;
 
@@ -50,8 +50,8 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
     }
 
     private void readSettings(Settings s){
-        if(s.contains(BLACKLIST_PREVIOUS_AP_TIME))
-            this.blackListPreviousAPTime = s.getInt(BLACKLIST_PREVIOUS_AP_TIME);
+
+        this.blackListPreviousAPTime = s.getInt(BLACKLIST_PREVIOUS_AP_TIME);
 
         if(s.contains(MAX_CLIENTS_SIZE_ENTRY))
             this.maxClients = s.getInt(MAX_CLIENTS_SIZE_ENTRY);
@@ -62,11 +62,8 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
         if(s.contains(MAX_FIRST_SCAN_DELAY)) {
             this.firstScanDelay = true;
             this.maxFirstScanDelay = s.getDouble(MAX_FIRST_SCAN_DELAY);
-            this.scanInterval = new Random().nextInt((int) maxFirstScanDelay);
+            this.timeToStartScan = new Random().nextInt((int) maxFirstScanDelay);
         }
-
-        if(s.contains(REWIRING_PROB))
-            this.rewiringProbability = s.getDouble(REWIRING_PROB);
     }
 
     /**
@@ -82,7 +79,7 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
         this.maxFirstScanDelay = ni.maxFirstScanDelay;
         if(ni.firstScanDelay) {
             this.firstScanDelay = true;
-            this.scanInterval = new Random().nextInt((int)maxFirstScanDelay);
+            this.timeToStartScan = new Random().nextInt((int)maxFirstScanDelay);
         }
         this.rewiringProbability = ni.rewiringProbability;
     }
@@ -92,6 +89,18 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
     }
 
     public Collection<NetworkInterface> getNearbyInterfaces(){return this.nearbyInterfaces; }
+    public Collection<DTNHost> getNearbyHosts(){
+
+        Collection<DTNHost> nearbyHosts = new ArrayList<>();
+
+        if(this.nearbyInterfaces != null) {
+            for (NetworkInterface networkInterface : this.nearbyInterfaces) {
+                nearbyHosts.add(networkInterface.getHost());
+            }
+        }
+
+        return nearbyHosts;
+    }
     public int getMaxClients(){return this.maxClients;}
 
     /**
@@ -128,7 +137,15 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
         }
 
         if(isScanning()){
-            this.nearbyInterfaces = optimizer.getNearInterfaces(this);
+            this.nearbyInterfaces = new ArrayList<>();
+
+            for(NetworkInterface ni : optimizer.getNearInterfaces(this)){
+                AutonomousHost autonomousHost = (AutonomousHost)ni.getHost();
+                if(isWithinRange(ni) &&
+                        ni != this &&
+                        autonomousHost.getCurrentStatus() != AutonomousHost.HOST_STATUS.OFFLINE)
+                    this.nearbyInterfaces.add(ni);
+            }
         }
     }
 
@@ -201,6 +218,8 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
             return false;
         }
 
+        if(SimClock.getTime() <= this.timeToStartScan) return false;
+
         //Logger.print(getHost(), "Scan interval: "+scanInterval);
 
         if (scanInterval > 0.0) {
@@ -236,8 +255,8 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
             if(this != i && isWithinRange(i) &&
                     otherHost.getService().getHostStatus() == AutonomousHost.HOST_STATUS.AP &&
                     otherHost.getService().getGroupMembers().size() > 0 &&
-                    otherHost.getService().getMaxClients() - otherHost.getService().getGroupMembers().size() > 0 &&
-                    isScanning() && i.getHost().isRadioActive() && !isConnected(i) && !isInBlackList(otherHost))
+                    otherHost.getService().getAvailableSlots() > 0 &&
+                    isScanning() && i.getHost().isRadioActive() && !isInBlackList(otherHost))
 
                 groups.add(otherHost);
         }

@@ -11,8 +11,10 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
 
     private static final String SETTINGS_NAMESPACE = "AutonomousHost";
     private static final String SETTINGS_DECISION_TIME_S = "decisionTimeS";
+    private static final String SETTINGS_TRAVELLING_PROB = "travellingProb";
 
-    private double secondsToTakeDecision;
+    private double decisionTimeS;
+    double travellingProb;
     private double lastDecision = 0;
 
     static final String GROUP_INFO_MESSAGE_ID = "g";
@@ -68,7 +70,13 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
     private void parseSettings(){
 
         Settings s = new Settings(SETTINGS_NAMESPACE);
-        this.secondsToTakeDecision = s.getDouble(SETTINGS_DECISION_TIME_S);
+        //Common settings
+        this.decisionTimeS = s.getDouble(SETTINGS_DECISION_TIME_S);
+
+        //CompleteAutonomousHost settings
+        if(this.getClass().getName().compareTo(CompleteAutonomousHost.class.getName()) == 0){
+            this.travellingProb = s.getDouble(SETTINGS_TRAVELLING_PROB);
+        }
     }
 
     public String toString(){
@@ -93,13 +101,18 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
 
         super.update(simulateConnections);
 
-        this.contextManager.updateContext(getCurrentStatus(), getGroup());
+        if(getInterfaces().size() != 0) {
 
-        checkMyResources();
+            int nearbyNodes = (getInterface().getNearbyInterfaces() == null) ? 0 : getInterface().getNearbyInterfaces().size();
 
-        if(SimClock.getTime() - lastDecision >= secondsToTakeDecision){
-            takeDecision();
-            this.lastDecision = SimClock.getIntTime();
+            this.contextManager.updateContext(getCurrentStatus(), getGroup(), nearbyNodes);
+
+            checkMyResources();
+
+            if (SimClock.getTime() - lastDecision >= decisionTimeS) {
+                takeDecision();
+                this.lastDecision = SimClock.getIntTime();
+            }
         }
     }
 
@@ -117,7 +130,7 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
     public void connectionUp(Connection con) {
         super.connectionUp(con);
 
-        Logger.print(this, con.fromNode + " ---> " + con.toNode);
+        //Logger.print(this, con.fromNode + " ---> " + con.toNode);
 
         //If this is an incoming connection
         if(con.fromNode != this){
@@ -231,7 +244,7 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
         if(group != null) {
             for (DTNHost node : group) {
                 if (node != this) {
-                    //Logger.print(this, "Sending GROUP_BYE to "+node.name);
+                    Logger.print(this, "Sending GROUP_BYE to "+node.name);
                     String messageId = GROUP_BYE_MESSAGE_ID + ":" + System.currentTimeMillis() + ":" + (new Random().nextInt());
                     Message message = new Message(this, node, messageId, this.group.size());
                     createNewMessage(message);
@@ -278,7 +291,7 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
     void handleGroupBye(Message message, AutonomousHost host){
 
         if(host == this.currentAP){
-            //Logger.print(this, "Received GROUP_BYE from the AP ("+host+")");
+            Logger.print(this, "Received GROUP_BYE from the AP ("+host+")");
             this.getInterface().addPreviousAPInBlacklist(host);
         }
     }

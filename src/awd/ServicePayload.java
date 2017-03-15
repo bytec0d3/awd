@@ -20,7 +20,7 @@ public class ServicePayload {
         this.currentAp = currentAp;
         this.resources = resources;
         this.maxClients = maxClients;
-        groupMembers = new HashSet<>();
+        this.groupMembers = new HashSet<>();
         if(group != null) groupMembers = group;
     }
 
@@ -28,9 +28,9 @@ public class ServicePayload {
     // GETTERS
     //-----------------------------------------------------------------------------------------------
     public AutonomousHost.HOST_STATUS getHostStatus(){ return this.hostStatus; }
-    public DTNHost getCurrentAp(){ return this.currentAp; }
-    public float getResources(){ return this.resources; }
-    public int getMaxClients(){return this.maxClients;}
+    public int getAvailableSlots() {
+        return (this.groupMembers != null) ? this.maxClients - this.groupMembers.size() : this.maxClients;
+    }
     public Set<DTNHost> getGroupMembers(){ return this.groupMembers; }
 
 
