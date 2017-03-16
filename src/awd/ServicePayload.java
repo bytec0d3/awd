@@ -9,16 +9,16 @@ public class ServicePayload {
 
     private AutonomousHost.HOST_STATUS hostStatus;
     private DTNHost currentAp;
-    private float resources;
+    private double utilityValue;
     private Set<DTNHost> groupMembers;
     private int maxClients;
 
 
-    public ServicePayload(AutonomousHost.HOST_STATUS status, DTNHost currentAp, float resources,
+    public ServicePayload(AutonomousHost.HOST_STATUS status, DTNHost currentAp, double utilityValue,
                           Set<DTNHost> group, int maxClients){
         this.hostStatus = status;
         this.currentAp = currentAp;
-        this.resources = resources;
+        this.utilityValue = utilityValue;
         this.maxClients = maxClients;
         this.groupMembers = new HashSet<>();
         if(group != null) groupMembers = group;

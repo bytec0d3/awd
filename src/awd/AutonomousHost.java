@@ -12,13 +12,19 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
     private static final String SETTINGS_NAMESPACE = "AutonomousHost";
     private static final String SETTINGS_DECISION_TIME_S = "decisionTimeS";
     private static final String SETTINGS_TRAVELLING_PROB = "travellingProb";
+    private static final String SETTINGS_MAX_RES_GROUP = "maxGroupRes";
+    private static final String SETTINGS_STABILITY_WINDOW_S = "stabilityWindowS";
+    private static final String SETTINGS_UTILITY_RESOURCES_WEIGHT = "utility_resourcesWeight";
+    private static final String SETTINGS_UTILITY_REACHABLE_NODES_WEIGHT = "utility_reachableNodesWeight";
+    private static final String SETTINGS_UTILITY_NEARBY_NODES_WEIGHT = "utility_nearbyNodesWeight";
+    private static final String SETTINGS_UTILITY_STABILITY_WEIGHT = "utility_stabilityWeight";
 
     private double decisionTimeS;
     double travellingProb;
     private double lastDecision = 0;
 
-    static final String GROUP_INFO_MESSAGE_ID = "g";
-    static final String GROUP_BYE_MESSAGE_ID = "gb";
+    private static final String GROUP_INFO_MESSAGE_ID = "g";
+    private static final String GROUP_BYE_MESSAGE_ID = "gb";
     static final String VISIBILITY_QUERY_MESSAGE_ID = "vq";
     static final String VISIBILITY_RESPONSE_MESSAGE_ID = "vqr";
     static final String MERGE_INTENT_MESSAGE_ID = "mi";
@@ -36,8 +42,8 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
     private Set<DTNHost> group;
 
     // The maximum percentage of resources used by the AP to maintain the group active
-    static final float MAX_RES_FOR_GROUP = 0.05f; //0.05
-    float startGroupResources;
+    double maxGroupResources;
+    double startGroupResources;
 
     /**
      * Creates a new DTNHost.
@@ -76,6 +82,15 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
         //CompleteAutonomousHost settings
         if(this.getClass().getName().compareTo(CompleteAutonomousHost.class.getName()) == 0){
             this.travellingProb = s.getDouble(SETTINGS_TRAVELLING_PROB);
+            this.maxGroupResources = s.getDouble(SETTINGS_MAX_RES_GROUP);
+
+            this.contextManager.setUtilityFunctionWeights(
+                    s.getDouble(SETTINGS_UTILITY_RESOURCES_WEIGHT),
+                    s.getDouble(SETTINGS_UTILITY_REACHABLE_NODES_WEIGHT),
+                    s.getDouble(SETTINGS_UTILITY_NEARBY_NODES_WEIGHT),
+                    s.getDouble(SETTINGS_STABILITY_WINDOW_S));
+
+            this.contextManager.setStabilityWindowSize(s.getDouble(SETTINGS_STABILITY_WINDOW_S));
         }
     }
 
@@ -88,24 +103,19 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
         return (AutonomousGroupInterface) getInterface(1);
     }
 
-    private void setGroupName(String groupName){ this.groupName = groupName; }
-    public String getGroupName(){ return this.groupName; }
-
-    public Set<DTNHost> getGroup(){ return this.group; }
-
     public ContextManager getContextManager(){return this.contextManager;}
 
-    public abstract void evaluateNearbyNodes(Collection<NetworkInterface> nodes);
 
+    //------------------------------------------------------------------------------------------------------------------
+    // UPDATE METHOD
+    //------------------------------------------------------------------------------------------------------------------
     public void update(boolean simulateConnections) {
 
         super.update(simulateConnections);
 
         if(getInterfaces().size() != 0) {
 
-            int nearbyNodes = (getInterface().getNearbyInterfaces() == null) ? 0 : getInterface().getNearbyInterfaces().size();
-
-            this.contextManager.updateContext(getCurrentStatus(), getGroup(), nearbyNodes);
+            this.contextManager.updateContext(getCurrentStatus(), getGroup(), getInterface().getNearbyNodes());
 
             checkMyResources();
 
@@ -116,12 +126,15 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
         }
     }
 
+    //------------------------------------------------------------------------------------------------------------------
+    // ABSTRACT METHODS
+    //------------------------------------------------------------------------------------------------------------------
     abstract void takeDecision();
+    public abstract void evaluateNearbyNodes(Collection<NetworkInterface> nodes);
 
-    //-----------------------------------------------------------------------------------------------
-    // CONNECTIONS MENAGEMENT
-    //-----------------------------------------------------------------------------------------------
-
+    //------------------------------------------------------------------------------------------------------------------
+    // CONNECTIONS
+    //------------------------------------------------------------------------------------------------------------------
     /**
      * Informs the router of this host about state change in a connection
      * object.
@@ -179,27 +192,13 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
             case AP:
                 removeGroupMember((con.fromNode == this ? con.toNode : con.fromNode));
                 sendGroupInfo();
-
         }
     }
 
-    private void updateGroup(Set<AutonomousHost> members){
-        if(this.currentStatus != HOST_STATUS.AP) {
-            this.group = new HashSet<>();
-            for (AutonomousHost member : members) if (member != this) group.add(member);
-            group.add(this.getCurrentAP());
-        }
-
-        //Logger.printMembership(this);
-    }
-
-
-
-    //-----------------------------------------------------------------------------------------------
-    // MESSAGE MENAGEMENT
-    //-----------------------------------------------------------------------------------------------
-
-    void clearMessageQueue(){
+    //------------------------------------------------------------------------------------------------------------------
+    // MESSAGES
+    //------------------------------------------------------------------------------------------------------------------
+    private void clearMessageQueue(){
         this.getRouter().messages = new HashMap<>();
     }
 
@@ -216,7 +215,7 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
     /**
      * Send the list of peers connected to the AP to every member of the group
      */
-    void sendGroupInfo(){
+    private void sendGroupInfo(){
 
         if(this.getGroup() != null && this.getGroup().size() != 0) {
 
@@ -224,7 +223,8 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
 
                 if (node != this) {
                     //Logger.print(this, "Send GI to "+node);
-                    String messageId = GROUP_INFO_MESSAGE_ID + ":" + System.currentTimeMillis() + ":" + (new Random().nextInt());
+                    int rand = new Random().nextInt();
+                    String messageId = GROUP_INFO_MESSAGE_ID+":"+System.currentTimeMillis()+":"+rand;
                     Message message = new Message(this, node, messageId, this.group.size());
                     int i = 0;
                     for (DTNHost member : group) {
@@ -239,13 +239,14 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
         }
     }
 
-    void sendGroupBye(){
+    private void sendGroupBye(){
 
         if(group != null) {
             for (DTNHost node : group) {
                 if (node != this) {
                     Logger.print(this, "Sending GROUP_BYE to "+node.name);
-                    String messageId = GROUP_BYE_MESSAGE_ID + ":" + System.currentTimeMillis() + ":" + (new Random().nextInt());
+                    int rand = new Random().nextInt();
+                    String messageId = GROUP_BYE_MESSAGE_ID+":"+System.currentTimeMillis()+":"+rand;
                     Message message = new Message(this, node, messageId, this.group.size());
                     createNewMessage(message);
                     sendMessage(messageId, node);
@@ -253,8 +254,6 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
             }
         }
     }
-
-
 
     /**
      * Start receiving a message from another host
@@ -274,6 +273,12 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
                 handleGroupInfoMessage(m, (AutonomousHost) from);
             else if(m.getId().contains(GROUP_BYE_MESSAGE_ID+":"))
                 handleGroupBye(m, (AutonomousHost)from);
+            else if(m.getId().contains(VISIBILITY_QUERY_MESSAGE_ID+":"))
+                handleVisibilityQueryMessage(m, (AutonomousHost)from);
+            else if(m.getId().contains(VISIBILITY_RESPONSE_MESSAGE_ID +":"))
+                handleVisibilityResponse(m, (AutonomousHost)from);
+            else if(m.getId().contains(MERGE_INTENT_MESSAGE_ID+":"))
+                handleMergeIntent(m, (AutonomousHost) from);
         }
 
         return retVal;
@@ -296,49 +301,44 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
         }
     }
 
+    void handleVisibilityQueryMessage(Message message, AutonomousHost host){}
+    void handleVisibilityResponse(Message message, AutonomousHost host){}
+    void handleMergeIntent(Message message, AutonomousHost host){}
 
-
-
-    //-----------------------------------------------------------------------------------------------
-    // LOCAL SERVICEMENAGEMENT
-    //-----------------------------------------------------------------------------------------------
-
+    //------------------------------------------------------------------------------------------------------------------
+    // LOCAL SERVICE MANAGEMENT
+    //------------------------------------------------------------------------------------------------------------------
     public ServicePayload getService(){
 
         return new ServicePayload(this.currentStatus, this.currentAP, this.contextManager.evalContext(),
                 this.getGroup(), getInterface().getMaxClients());
     }
 
-    //-----------------------------------------------------------------------------------------------
-    // STATUS & GROUP MENAGEMENT
-    //-----------------------------------------------------------------------------------------------
-
-    //public void scanningEvent(){
-    //    this.contextManager.updateContextAfterScanning();
-    //}
-
+    //------------------------------------------------------------------------------------------------------------------
+    // STATUS MANAGEMENT
+    //------------------------------------------------------------------------------------------------------------------
     public HOST_STATUS getCurrentStatus(){return this.currentStatus; }
-
-    private void checkMyResources(){
-
-        if(getCurrentStatus() != HOST_STATUS.OFFLINE && this.contextManager.getBatteryLevel() <= RES_TO_GO_OFFLINE) {
-
-            Logger.print(this, "Turning off Wifi");
-            destroyGroup();
-            getInterface().stopScan();
-            setCurrentStatus(HOST_STATUS.OFFLINE);
-        }
-    }
-
-    void destroyGroup(){
-        if(this.getCurrentStatus() == HOST_STATUS.AP) sendGroupBye();
-        this.getInterface().leaveCurrentGroup();
-        clearGroup();
-    }
 
     public void setCurrentStatus(HOST_STATUS currentStatus){
         this.currentStatus = currentStatus;
         if(this.currentStatus == HOST_STATUS.AP) setGroupName(this.toString());
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
+    // GROUP MANAGEMENT
+    //------------------------------------------------------------------------------------------------------------------
+    private void setGroupName(String groupName){ this.groupName = groupName; }
+
+    public String getGroupName(){ return this.groupName; }
+
+    public Set<DTNHost> getGroup(){ return this.group; }
+
+    private void updateGroup(Set<AutonomousHost> members){
+        if(this.currentStatus != HOST_STATUS.AP) {
+            this.group = new HashSet<>();
+            for (AutonomousHost member : members) if (member != this) group.add(member);
+            group.add(this.getCurrentAP());
+        }
     }
 
     private void addGroupMember(DTNHost host){
@@ -350,17 +350,6 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
                 this.startGroupResources = this.contextManager.getBatteryLevel();
         }
         this.group.add(host);
-
-        //Logger.printMembership(this);
-    }
-
-    private void clearGroup(){
-        this.group = null;
-        this.startGroupResources = 0;
-        setCurrentAP(this);
-        setCurrentStatus(HOST_STATUS.AP);
-
-        //Logger.printMembership(this);
     }
 
     private void removeGroupMember(DTNHost host){
@@ -373,20 +362,49 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
         }
     }
 
+    void destroyGroup(){
+        if(this.getCurrentStatus() == HOST_STATUS.AP) sendGroupBye();
+        this.getInterface().leaveCurrentGroup();
+        clearGroup();
+    }
+
+    private void clearGroup(){
+        this.group = null;
+        this.startGroupResources = 0;
+        setCurrentAP(this);
+        setCurrentStatus(HOST_STATUS.AP);
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
+    // RESOURCES
+    //------------------------------------------------------------------------------------------------------------------
+    private void checkMyResources(){
+
+        if(getCurrentStatus() != HOST_STATUS.OFFLINE && this.contextManager.getBatteryLevel() <= RES_TO_GO_OFFLINE) {
+
+            Logger.print(this, "Turning off Wifi");
+            destroyGroup();
+            getInterface().stopScan();
+            setCurrentStatus(HOST_STATUS.OFFLINE);
+        }
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
+    // CURRENT_AP MANAGEMENT
+    //------------------------------------------------------------------------------------------------------------------
     private void setCurrentAP(DTNHost host){
         this.currentAP = host;
         setGroupName(host.toString());
     }
 
-    public DTNHost getCurrentAP(){return this.currentAP; }
+    DTNHost getCurrentAP(){return this.currentAP; }
 
 
-    //-----------------------------------------------------------------------------------------------
-    // Comparators
-    //-----------------------------------------------------------------------------------------------
-
-    public static class Comparators {
-        public static Comparator<DTNHost> contextAndNameComparator = new Comparator<DTNHost>() {
+    //------------------------------------------------------------------------------------------------------------------
+    // COMPARATORS
+    //------------------------------------------------------------------------------------------------------------------
+    static class Comparators {
+        static Comparator<DTNHost> contextAndNameComparator = new Comparator<DTNHost>() {
             @Override
             public int compare(DTNHost o1, DTNHost o2) {
 
@@ -401,7 +419,7 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
             }
         };
 
-        public static Comparator<AutonomousHost> groupComparator = new Comparator<AutonomousHost>() {
+        static Comparator<AutonomousHost> groupComparator = new Comparator<AutonomousHost>() {
             @Override
             public int compare(AutonomousHost o1, AutonomousHost o2) {
 
@@ -412,7 +430,7 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
             }
         };
 
-        public static Comparator<AutonomousHost> addressComparator = new Comparator<AutonomousHost>() {
+        static Comparator<AutonomousHost> addressComparator = new Comparator<AutonomousHost>() {
             @Override
             public int compare(AutonomousHost o1, AutonomousHost o2) {
 

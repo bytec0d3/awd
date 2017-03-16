@@ -18,7 +18,6 @@ public class CompleteAutonomousHost extends AutonomousHost {
 
     private Random random;
 
-
     /**
      * Creates a new DTNHost.
      *
@@ -79,7 +78,7 @@ public class CompleteAutonomousHost extends AutonomousHost {
 
         double r = random.nextDouble();
         if(r <= this.travellingProb / this.getGroup().size()){
-            Logger.print(this, "R: "+r+" - th: "+this.travellingProb / this.getGroup().size());
+            //Logger.print(this, "R: "+r+" - th: "+this.travellingProb / this.getGroup().size());
             //Logger.print(this, "Ok, lets travel");
             getInterface().addPreviousAPInBlacklist(this.getCurrentAP());
             destroyGroup();
@@ -114,7 +113,7 @@ public class CompleteAutonomousHost extends AutonomousHost {
 
     private void checkGroupResources(){
 
-        if(this.startGroupResources - this.contextManager.getBatteryLevel() >= MAX_RES_FOR_GROUP) {
+        if(this.startGroupResources - this.contextManager.getBatteryLevel() >= this.maxGroupResources) {
             Logger.print(this, "Group resources limit reached");
             destroyGroup();
         }
@@ -129,7 +128,7 @@ public class CompleteAutonomousHost extends AutonomousHost {
         }else{
 
             Collection<DTNHost> currentGroup = new ArrayList<>();
-            currentGroup.addAll(this.getGroup());
+            if(this.getGroup() != null) currentGroup.addAll(this.getGroup());
             if(CollectionUtils.subtract(getInterface().getNearbyHosts(), currentGroup).size() != 0) {
                 // If I am a client and there are other groups in the nearby, evaluate to become a traveller
                 if (getCurrentStatus() == HOST_STATUS.CONNECTED) {
@@ -141,44 +140,13 @@ public class CompleteAutonomousHost extends AutonomousHost {
                 }
             }
         }
-
     }
 
 
     //------------------------------------------------------------------------------------------------------------------
     // MESSAGE MENAGEMENT
     //------------------------------------------------------------------------------------------------------------------
-
-    /**
-     * Start receiving a message from another host
-     * @param m The message
-     * @param from Who the message is from
-     * @return The value returned by
-     * {@link MessageRouter#receiveMessage(Message, DTNHost)}
-     */
-    public int receiveMessage(Message m, DTNHost from) {
-        int retVal = getRouter().receiveMessage(m, from);
-
-        if (retVal == MessageRouter.RCV_OK) {
-            m.addNodeOnPath(this);	// add this node on the messages path
-            getRouter().messageTransferred(m.getId(),from);
-
-            if(m.getId().contains(GROUP_INFO_MESSAGE_ID+":"))
-                handleGroupInfoMessage(m, (AutonomousHost) from);
-            else if(m.getId().contains(GROUP_BYE_MESSAGE_ID+":"))
-                handleGroupBye(m, (AutonomousHost)from);
-            else if(m.getId().contains(VISIBILITY_QUERY_MESSAGE_ID+":"))
-                handleVisibilityQueryMessage(m, (AutonomousHost)from);
-            else if(m.getId().contains(VISIBILITY_RESPONSE_MESSAGE_ID +":"))
-                handleVisibilityResponse(m, (AutonomousHost)from);
-            else if(m.getId().contains(MERGE_INTENT_MESSAGE_ID+":"))
-                handleMergeIntent(m, (AutonomousHost) from);
-        }
-
-        return retVal;
-    }
-
-    public void sendVisibilityQuery(AutonomousHost host){
+    void sendVisibilityQuery(AutonomousHost host){
 
         this.hostToMerge = host;
         this.mergePositiveResponses = 0;
@@ -187,7 +155,7 @@ public class CompleteAutonomousHost extends AutonomousHost {
 
             for (DTNHost node : getGroup()){
 
-                String messageId = VISIBILITY_QUERY_MESSAGE_ID + ":" + System.currentTimeMillis() + ":" +host.getAddress();
+                String messageId = VISIBILITY_QUERY_MESSAGE_ID+":"+System.currentTimeMillis()+":"+host.getAddress();
                 Message message = new Message(this, node, messageId, 0);
                 createNewMessage(message);
                 sendMessage(messageId, node);
@@ -214,7 +182,7 @@ public class CompleteAutonomousHost extends AutonomousHost {
             hostToNotify.addAll(this.getGroup());
 
             for(DTNHost host : hostToNotify){
-                String messageId = MERGE_INTENT_MESSAGE_ID + ":" + System.currentTimeMillis() + ":" + String.valueOf(nodeAddress);
+                String messageId = MERGE_INTENT_MESSAGE_ID +":"+System.currentTimeMillis()+":"+nodeAddress;
                 Message message = new Message(this, host, messageId, 0);
                 createNewMessage(message);
                 sendMessage(messageId, host);
@@ -223,7 +191,7 @@ public class CompleteAutonomousHost extends AutonomousHost {
     }
 
 
-    private void handleVisibilityQueryMessage(Message message, AutonomousHost host){
+    void handleVisibilityQueryMessage(Message message, AutonomousHost host){
 
         int address = Integer.parseInt(message.getId().split(":")[2]);
 
@@ -240,7 +208,7 @@ public class CompleteAutonomousHost extends AutonomousHost {
         sendVisibilityResponse(visible, host);
     }
 
-    private void handleVisibilityResponse(Message message, AutonomousHost host){
+    void handleVisibilityResponse(Message message, AutonomousHost host){
 
         int visibility = Integer.parseInt(message.getId().split(":")[2]);
         if(visibility == 1) this.mergePositiveResponses++;
@@ -253,7 +221,7 @@ public class CompleteAutonomousHost extends AutonomousHost {
         }
     }
 
-    private void handleMergeIntent(Message message, AutonomousHost host){
+    void handleMergeIntent(Message message, AutonomousHost host){
 
         if(this.hostToMerge != null) {
             this.getInterface().connect(this.hostToMerge.getInterface());

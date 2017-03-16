@@ -7,7 +7,7 @@ Scenario.name = cluster_scenario
 Scenario.simulateConnections = true
 Scenario.updateInterval = 0.1
 # 43k ~= 12h
-Scenario.endTime = 43k
+Scenario.endTime = 90k
 
 #-----------------------------------------------------------------------------------------------------------------------
 ## Interface settings
@@ -21,11 +21,11 @@ firstinterface.scanIntervalInGroup = 0
 firstinterface.maxFirstScanDelay = 5.0
 firstinterface.rewiringProbability = 0.4
 firstinterface.maxGroupSize = 4
-firstinterface.maxClients = 3
+firstinterface.maxClients = 25
 firstinterface.BL_prevAP_S = 300
 
 
-Scenario.nrofHostGroups = 2
+Scenario.nrofHostGroups = 1
 Scenario.hostType = CompleteAutonomousHost
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -33,6 +33,16 @@ Scenario.hostType = CompleteAutonomousHost
 #-----------------------------------------------------------------------------------------------------------------------
 AutonomousHost.decisionTimeS = 60
 AutonomousHost.travellingProb = 0.25
+AutonomousHost.maxGroupRes = 0.2
+AutonomousHost.stabilityWindowS = 600
+
+## Utility function weights---------------------------------------------------------------------------------------------
+AutonomousHost.utility_resourcesWeight = 0.25
+AutonomousHost.utility_reachableNodesWeight = 0.25
+AutonomousHost.utility_nearbyNodesWeight = 0.25
+AutonomousHost.utility_stabilityWeight = 0.25
+
+
 
 # common settings for all groups
 Group.movementModel = ClusterMovement
@@ -49,14 +59,9 @@ Group.nrofHosts = 0
 Group.nrofApplications = 0
 
 Group1.groupID = a
-Group1.nrofHosts = 5
+Group1.nrofHosts = 30
 Group1.clusterCenter = 300, 100
-Group1.clusterRange = 20
-
-Group2.groupID = b
-Group2.nrofHosts = 5
-Group2.clusterCenter = 450, 100
-Group2.clusterRange = 20
+Group1.clusterRange = 60
 
 
 ## Map based movement -movement model specific settings

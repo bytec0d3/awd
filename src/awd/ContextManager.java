@@ -2,8 +2,9 @@ package awd;
 
 import core.DTNHost;
 import core.SimClock;
+import org.apache.commons.collections4.CollectionUtils;
 
-import java.util.Set;
+import java.util.*;
 
 public class ContextManager {
 
@@ -17,8 +18,17 @@ public class ContextManager {
     private static final double SCAN_SLOPE = -0.04;
     private static final double SCAN_INTERCEPT = 1.0;
 
+    //Stability index
+    private double stabilityWindowSize;
+    private double lastStabilityUpdate;
+    private double lastStabilityValue;
+    private List<Integer> previousNearbynodes; //List of addresses
+    private List<Double> jaccards = new ArrayList<>();
+    private double lastWeight = 0.5;
+    private double currentWeight = 0.5;
 
-    private float battery;
+
+    private float battery = 1.0f;
     private int reachableNodes;
 
 
@@ -26,24 +36,61 @@ public class ContextManager {
     private AutonomousHost.HOST_STATUS lastStatus = null;
     private Integer lastGroupSize = null;
 
-    public ContextManager(){
+    private double resourcesWeight, reachableNodesWeight, nearbyNodesWeight, stabilityWeight;
 
-        this.battery = 1.0f;
-        this.reachableNodes = 0;
+    void setUtilityFunctionWeights(double resources, double reachable, double nearby, double stability){
+
+        this.resourcesWeight = resources;
+        this.reachableNodesWeight = reachable;
+        this.nearbyNodesWeight = nearby;
+        this.stabilityWeight = stability;
+
+    }
+    void setStabilityWindowSize(double stabilityWindowSize){this.stabilityWindowSize = stabilityWindowSize;}
+
+    private void updateStability(List<Integer> currentNearbyNodes){
+
+        if(previousNearbynodes == null) this.previousNearbynodes = new ArrayList<>();
+        else {
+
+            this.jaccards.add(jaccard(this.previousNearbynodes, currentNearbyNodes));
+            this.previousNearbynodes = currentNearbyNodes;
+
+            double currentTime = SimClock.getTime();
+
+            if (currentTime - lastStabilityUpdate >= stabilityWindowSize) {
+                //update the stability value
+                this.lastStabilityUpdate = currentTime;
+
+                OptionalDouble average = jaccards.stream().mapToDouble(a -> a).average();
+                double avg = average.isPresent() ? average.getAsDouble() : 0;
+
+                this.lastStabilityValue = this.lastStabilityValue * this.lastWeight + avg * this.currentWeight;
+
+                this.jaccards = new ArrayList<>();
+            }
+        }
     }
 
-    //public void updateContextAfterScanning(){
-    //this.battery -= BATTERY_DROP_SCANNING;
-    //}
+    private double jaccard(Collection<Integer> previous, Collection<Integer> current){
 
-    public void updateContext(AutonomousHost.HOST_STATUS currentStatus,
+        double jac = 0;
+        if(previous.size() != 0 || current.size() != 0)
+            jac = CollectionUtils.intersection(previous, current).size() / CollectionUtils.union(previous, current).size();
+
+        //Logger.print(null, "Jac: "+lastStabilityValue);
+        return jac;
+    }
+
+    void updateContext(AutonomousHost.HOST_STATUS currentStatus,
                               Set<DTNHost> group,
-                              int reachableNodes){
+                              List<Integer> nearbyNodes){
 
         int currentTime = (int) SimClock.getTime();
         double drop = 0;
 
-        this.reachableNodes = reachableNodes;
+        this.reachableNodes = (group != null) ? group.size() : 0;
+        updateStability(nearbyNodes);
 
         if(this.lastUpdate == null || currentTime > this.lastUpdate) {
 
@@ -72,8 +119,11 @@ public class ContextManager {
         }
     }
 
-    public Float evalContext(){
-        return this.battery*0.5f+this.reachableNodes*0.5f;
+    Double evalContext(){
+        return this.battery*resourcesWeight+
+                this.reachableNodes*reachableNodesWeight+
+                ((this.previousNearbynodes == null) ? 0 : this.previousNearbynodes.size())*nearbyNodesWeight
+                +this.lastStabilityValue*stabilityWeight;
     }
     public float getBatteryLevel(){ return this.battery; }
 

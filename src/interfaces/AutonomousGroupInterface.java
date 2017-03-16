@@ -89,6 +89,14 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
     }
 
     public Collection<NetworkInterface> getNearbyInterfaces(){return this.nearbyInterfaces; }
+    public List<Integer> getNearbyNodes(){
+        List<Integer> hosts = new ArrayList<>();
+
+        if(nearbyInterfaces != null)
+            for(NetworkInterface nI : this.nearbyInterfaces) hosts.add(nI.getHost().getAddress());
+
+        return hosts;
+    }
     public Collection<DTNHost> getNearbyHosts(){
 
         Collection<DTNHost> nearbyHosts = new ArrayList<>();
@@ -281,138 +289,6 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
 
         return (singlets.size() == 0) ? null : singlets;
     }
-
-    /*private Object[] extractGroups(Collection<NetworkInterface> nodes){
-
-        this.nearbyNodes = new ArrayList<>();
-
-        //myHost.setCurrentStatus(AutonomousHost.HOST_STATUS.BUSY);
-
-        HashMap<Integer, NetworkInterface> nearbyGroups = new HashMap<>();
-        List<AutonomousHost> nearbySinglets = new ArrayList<>();
-
-        for (NetworkInterface i : nodes) {
-
-            AutonomousHost otherHost = (AutonomousHost)i.getHost();
-
-            if(this != i && isWithinRange(i)) this.nearbyNodes.add(otherHost);
-
-            if (otherHost.getService().getHostStatus() == AutonomousHost.HOST_STATUS.AP
-                    && isScanning()
-                    && i.getHost().isRadioActive()
-                    && isWithinRange(i)
-                    && !isConnected(i)
-                    && (this != i)
-                    && !isInBlackList(otherHost))
-            {
-
-                Set<DTNHost> otherGroup = otherHost.getService().getGroupMembers();
-
-                if(otherGroup != null && otherGroup.size() > 0 && otherGroup.size() < this.maxClients)
-                    nearbyGroups.put(otherGroup.size(), i);
-                else if(otherGroup == null || otherGroup.size() == 0)
-                    nearbySinglets.add(otherHost);
-            }
-        }
-
-        return new Object[]{nearbyGroups, nearbySinglets};
-    }
-
-    private NetworkInterface getBestCandidate(HashMap<Integer, NetworkInterface> nearbyGroups, List<AutonomousHost> nearbySinglets){
-
-        NetworkInterface bestCandidate = null;
-
-        // If there are groups in the nearby, connect to the greatest one
-        if (nearbyGroups.size() > 0) {
-            SortedSet<Integer> keys = new TreeSet<>(nearbyGroups.keySet());
-            bestCandidate =  nearbyGroups.get(keys.last());
-
-        } else {
-            //else, choose the best node
-            nearbySinglets.add((AutonomousHost) this.host);
-            Collections.sort(nearbySinglets, AutonomousHost.Comparators.contextAndNameComparator);
-            AutonomousHost candidateHost = nearbySinglets.get(nearbySinglets.size() - 1);
-            if (candidateHost != this.host) bestCandidate = candidateHost.getInterface();
-        }
-
-        return bestCandidate;
-    }
-
-    /**
-     * Evaluate visible services.
-     *
-     * @param nodes     List of visible interfaces (nodes)
-
-    private void evaluateNearbyInterfaces(Collection<NetworkInterface> nodes){
-
-        Object[] groups = extractGroups(nodes);
-        HashMap<Integer, NetworkInterface> nearbyGroups = (HashMap<Integer, NetworkInterface>) groups[0];
-        List<AutonomousHost> nearbySinglets = (List<AutonomousHost>) groups[1];
-
-        if(this.connections.size() > 0 &&
-                myHost.getCurrentStatus() == AutonomousHost.HOST_STATUS.AP
-                && nearbyGroups.size() > 0){
-            evaluateMarge(nearbyGroups);
-        }else {
-            if (rewireConnections(nearbyGroups)) return;
-
-            if (this.connections.size() == 0) {
-                NetworkInterface bestCandidate = getBestCandidate(nearbyGroups, nearbySinglets);
-                if(bestCandidate != null) connect(bestCandidate);
-            }
-        }
-    }
-
-    private void simpleEvaluateNearbyInterfaces(Collection<NetworkInterface> nodes){
-
-        /*Object[] groups = extractGroups(nodes);
-        HashMap<Integer, NetworkInterface> nearbyGroups = (HashMap<Integer, NetworkInterface>) groups[0];
-        List<AutonomousHost> nearbySinglets = (List<AutonomousHost>) groups[1];
-
-        if (this.connections.size() == 0) {
-            NetworkInterface bestCandidate = getBestCandidate(nearbyGroups, nearbySinglets);
-            if(bestCandidate != null) connect(bestCandidate);
-        }
-    }
-
-    /*private void evaluateMarge(HashMap<Integer, NetworkInterface> nearbyGroups){
-
-        //Choose the AP with less clients
-        SortedSet<Integer> keys = new TreeSet<>(nearbyGroups.keySet());
-        NetworkInterface candidateInterface = nearbyGroups.get(keys.first());
-        AutonomousHost candidateHost = (AutonomousHost) candidateInterface.getHost();
-
-        if (candidateHost.getService().getGroupMembers().size() > myHost.getGroup().size() &&
-                candidateHost.getService().getGroupMembers().size() + myHost.getGroup().size() < maxGroupSize) {
-            myHost.sendVisibilityQuery(candidateHost);
-        }
-    }
-
-    private boolean rewireConnections(HashMap<Integer, NetworkInterface> groups){
-        boolean rewired = false;
-
-        AutonomousHost myHost = (AutonomousHost) this.host;
-
-        if(this.connections.size() > 0
-                && groups.size() > 0 &&
-                this.host != myHost.getCurrentAP() &&
-                random.nextDouble() <= this.rewiringProbability){
-
-            List<Integer> groupsKeys = new ArrayList<>();
-            groupsKeys.addAll(groups.keySet());
-
-            int key = groupsKeys.get(new Random().nextInt(groupsKeys.size()));
-            if(groups.get(key).getHost() != myHost.getCurrentAP()){
-                leaveCurrentGroup();
-                connect(groups.get(key));
-                Logger.print(this.host, "REWIRING");
-                rewired = true;
-            }
-
-        }
-
-        return rewired;
-    }*/
 
     public void leaveCurrentGroup(){
 
