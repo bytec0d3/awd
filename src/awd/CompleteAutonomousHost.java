@@ -83,7 +83,6 @@ public class CompleteAutonomousHost extends AutonomousHost {
             getInterface().addPreviousAPInBlacklist(this.getCurrentAP());
             destroyGroup();
         }
-
     }
 
     private void evaluateMerge(){

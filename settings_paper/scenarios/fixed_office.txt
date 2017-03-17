@@ -1,0 +1,59 @@
+#-----------------------------------------------------------------------------------------------------------------------
+## Scenario settings
+#-----------------------------------------------------------------------------------------------------------------------
+Scenario.name = big_office
+Scenario.simulateConnections = true
+Scenario.updateInterval = 1
+Scenario.endTime = 28800
+Scenario.nrofHostGroups = 1
+
+#-----------------------------------------------------------------------------------------------------------------------
+## Movement model settings
+#-----------------------------------------------------------------------------------------------------------------------
+# seed for movement models' pseudo random number generator (default = 0)
+MovementModel.rngSeed = 1
+# World's size for Movement Models without implicit size (width, height; meters)
+MovementModel.worldSize = 1000, 1000
+# How long time to move hosts in the world before real simulation
+MovementModel.warmup = 0
+
+#-----------------------------------------------------------------------------------------------------------------------
+## GROUPS settings
+#-----------------------------------------------------------------------------------------------------------------------
+Group.movementModel = ClusterMovement
+Group.router = EpidemicRouter
+Group.bufferSize = 5M
+Group.waitTime = 0, 120
+Group.nrofInterfaces = 0
+Group.speed = 0.0, 0.0
+Group.nrofHosts = 0
+Group.nrofApplications = 0
+
+Group1.groupID = a
+Group1.nrofHosts = 20
+Group1.clusterCenter = 300, 100
+Group1.clusterRange = 60
+
+#-----------------------------------------------------------------------------------------------------------------------
+## EVENTS settings (message creation)
+#-----------------------------------------------------------------------------------------------------------------------
+Events.nrof = 0
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+## MOVEMENT model settings
+#-----------------------------------------------------------------------------------------------------------------------
+# seed for movement models' pseudo random number generator (default = 0)
+MovementModel.rngSeed = 1
+MovementModel.worldSize = 1000, 1000
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+## Reports settings
+#-----------------------------------------------------------------------------------------------------------------------
+Report.nrofReports = 3
+Report.warmup = 0
+Report.reportDir = reports/
+Report.report1 = Autonomous_ExploitReport
+Report.report2 = Autonomous_BatteryReport
+Report.report3 =Autonomous_AverageStats

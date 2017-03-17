@@ -52,7 +52,7 @@ public class Autonomous_AverageStats extends Report implements UpdateListener {
             Stats rs = ratioStats.get(i).getValue();
             Stats bs = batteryStats.get(i).getValue();
             write(time + "," +
-                    rs.mean + "," + rs.median + "," + rs.variance + "," + rs.std +
+                    rs.mean + "," + rs.median + "," + rs.variance + "," + rs.std + "," +
                     bs.mean + "," + bs.median + "," + bs.variance + "," + bs.std
             );
         }

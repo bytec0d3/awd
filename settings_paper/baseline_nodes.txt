@@ -1,0 +1,19 @@
+Scenario.hostType = SimpleAutonomousHost
+
+## Interface settings
+#-----------------------------------------------------------------------------------------------------------------------
+firstinterface.type = AutonomousGroupInterface
+firstinterface.transmitSpeed = 250M
+firstinterface.transmitRange = 30
+firstinterface.scanInterval = 0
+firstinterface.scanIntervalSearching = 0
+firstinterface.scanIntervalInGroup = 0
+firstinterface.maxFirstScanDelay = 5.0
+firstinterface.rewiringProbability = 0.4
+firstinterface.maxGroupSize = 4
+firstinterface.maxClients = 2
+firstinterface.BL_prevAP_S = 300
+
+
+Group.nrofInterfaces = 1
+Group.interface1 = firstinterface
