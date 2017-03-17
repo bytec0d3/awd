@@ -24,8 +24,8 @@ public class ContextManager {
     private double lastStabilityValue;
     private List<Integer> previousNearbynodes; //List of addresses
     private List<Double> jaccards = new ArrayList<>();
-    private double lastWeight = 0.5;
-    private double currentWeight = 0.5;
+    private double lastStabilityWeight = 0.5;
+    private double currentStabilityWeight = 0.5;
 
 
     private float battery = 1.0f;
@@ -37,6 +37,11 @@ public class ContextManager {
     private Integer lastGroupSize = null;
 
     private double resourcesWeight, reachableNodesWeight, nearbyNodesWeight, stabilityWeight;
+
+    void setStabilityWeights(double prev, double current){
+        this.lastStabilityWeight = prev;
+        this.currentStabilityWeight = current;
+    }
 
     void setUtilityFunctionWeights(double resources, double reachable, double nearby, double stability){
 
@@ -65,7 +70,7 @@ public class ContextManager {
                 OptionalDouble average = jaccards.stream().mapToDouble(a -> a).average();
                 double avg = average.isPresent() ? average.getAsDouble() : 0;
 
-                this.lastStabilityValue = this.lastStabilityValue * this.lastWeight + avg * this.currentWeight;
+                this.lastStabilityValue = this.lastStabilityValue * this.lastStabilityWeight + avg * this.currentStabilityWeight;
 
                 this.jaccards = new ArrayList<>();
             }
