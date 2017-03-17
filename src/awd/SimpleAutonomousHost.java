@@ -1,9 +1,6 @@
 package awd;
 
-import core.MessageListener;
-import core.ModuleCommunicationBus;
-import core.MovementListener;
-import core.NetworkInterface;
+import core.*;
 import movement.MovementModel;
 import routing.MessageRouter;
 
@@ -70,5 +67,10 @@ public class SimpleAutonomousHost extends AutonomousHost {
     @Override
     void takeDecision() {
         evaluateNearbyNodes(getInterface().getNearbyInterfaces());
+    }
+
+    public ServicePayload getService(){
+
+        return new ServicePayload(this.getCurrentStatus(), this.getGroup());
     }
 }

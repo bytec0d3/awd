@@ -9,7 +9,7 @@ import java.util.*;
 public class AutonomousGroupInterface extends SimpleBroadcastInterface {
 
     //Settings fields
-    private static final String BLACKLIST_PREVIOUS_AP_TIME = "BL_prevAP_S";
+    private static final String BLACKLIST_PREVIOUS_AP_TIME = "blacklistTime";
     private static final String SETTINGS_GENERAL_MAX_CLIENTS = "generalMaxClients";
     private static final String MAX_TIME_TO_CONNECT = "maxTimeToConnect";
     private static final String MAX_FIRST_SCAN_DELAY = "maxFirstScanDelay";
@@ -19,8 +19,6 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
     private double maxFirstScanDelay;
     private boolean firstScanDelay = false;
     private double timeToStartScan = 0;
-
-    private double rewiringProbability = 0.8;
 
     private int generalMinClients;
     private int generalMaxClients;
@@ -83,7 +81,6 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
             this.firstScanDelay = true;
             this.timeToStartScan = new Random().nextInt((int)maxFirstScanDelay);
         }
-        this.rewiringProbability = ni.rewiringProbability;
     }
 
     public NetworkInterface replicate()	{
@@ -269,6 +266,24 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
             if(this != i && isWithinRange(i) &&
                     otherHost.getService().getHostStatus() == AutonomousHost.HOST_STATUS.AP &&
                     otherHost.getService().getGroupMembers().size() > 0 &&
+                    otherHost.getService().getAvailableSlots() > 0 &&
+                    isScanning() && i.getHost().isRadioActive() && !isInBlackList(otherHost))
+
+                groups.add(otherHost);
+        }
+
+        return (groups.size() == 0) ? null : groups;
+    }
+
+    public List<AutonomousHost> getAvailableGOs(Collection<NetworkInterface> nodes){
+
+        List<AutonomousHost> groups = new ArrayList<>();
+
+        for (NetworkInterface i : nodes) {
+            AutonomousHost otherHost = (AutonomousHost)i.getHost();
+
+            if(this != i && isWithinRange(i) &&
+                    otherHost.getService().getHostStatus() == AutonomousHost.HOST_STATUS.AP &&
                     otherHost.getService().getAvailableSlots() > 0 &&
                     isScanning() && i.getHost().isRadioActive() && !isInBlackList(otherHost))
 

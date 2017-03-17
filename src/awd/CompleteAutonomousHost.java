@@ -12,6 +12,24 @@ import java.util.*;
  */
 public class CompleteAutonomousHost extends AutonomousHost {
 
+    private static final String SETTINGS_TRAVELLING_PROB = "travellingProb";
+    private static final String SETTINGS_MAX_RES_GROUP = "destroyGroupAfterPercRes";
+    private static final String SETTINGS_PREV_STABILITY_WEIGHT = "prevStabilityWeight";
+    private static final String SETTINGS_CURRENT_STABILITY_WEIGHT = "currentStabilityWeight";
+    private static final String SETTINGS_STABILITY_WINDOW_S = "stabilityWindowSize";
+    private static final String SETTINGS_UTILITY_RESOURCES_WEIGHT = "utilityResourcesWeight";
+    private static final String SETTINGS_UTILITY_NEARBY_NODES_WEIGHT = "utilityNearbyNodesWeight";
+    private static final String SETTINGS_UTILITY_CAPACITY_NEARBY_WEIGHT = "utilityCapacityNearbyWeight";
+    private static final String SETTINGS_UTILITY_STABILITY_WEIGHT = "utilityStabilityWeight";
+
+    private double resourcesWeight, capacityNearbyWeight, nearbyNodesWeight, stabilityWeight;
+
+    // The maximum percentage of resources used by the AP to maintain the group active
+    private double maxGroupResources;
+    private double startGroupResources;
+
+    private double travellingProb;
+
     //Merge
     private AutonomousHost hostToMerge;
     private int mergePositiveResponses;
@@ -78,8 +96,6 @@ public class CompleteAutonomousHost extends AutonomousHost {
 
         double r = random.nextDouble();
         if(r <= this.travellingProb / this.getGroup().size()){
-            //Logger.print(this, "R: "+r+" - th: "+this.travellingProb / this.getGroup().size());
-            //Logger.print(this, "Ok, lets travel");
             getInterface().addPreviousAPInBlacklist(this.getCurrentAP());
             destroyGroup();
         }
@@ -87,9 +103,38 @@ public class CompleteAutonomousHost extends AutonomousHost {
 
     private void evaluateMerge(){
 
-        int minSize = (this.getGroup().size() / 2) + 1;
+        int myCapacity = this.getService().getAvailableSlots();
+        int myCardinality = (this.getGroup() != null) ? this.getGroup().size() : 0;
+        int myMinSize = (this.getGroup().size() / 2) + 1;
 
-        List<AutonomousHost> availableGroups = getInterface().getAvailableGroups(getInterface().getNearbyInterfaces());
+        List<AutonomousHost> availableGos = getInterface().getAvailableGOs(getInterface().getNearbyInterfaces());
+
+        if(availableGos != null) {
+
+            List<AutonomousHost> candidates = new ArrayList<>();
+
+            for(AutonomousHost autonomousHost : availableGos){
+
+                int otherCardinality = autonomousHost.getService().getGroupMembers().size();
+                int otherCapacity = autonomousHost.getService().getAvailableSlots();
+                int otherMinSize = (autonomousHost.getService().getGroupMembers().size() / 2) + 1;
+
+                if(otherCapacity > myCapacity && otherCardinality > myCardinality ||
+                        (otherCapacity > myMinSize && otherCardinality <= myCapacity && myCapacity < otherMinSize))
+                    candidates.add(autonomousHost);
+            }
+
+            if(candidates.size() > 0) {
+                AutonomousHost bestCandidate = candidates.stream()
+                        .max(Comparator.comparing(c -> c.getService().getUtilityValue()))
+                        .orElse(null);
+
+                if(bestCandidate.getService().getUtilityValue() > this.getService().getUtilityValue())
+                    sendVisibilityQuery(bestCandidate);
+            }
+        }
+
+        /*
         if(availableGroups != null) {
             availableGroups.removeIf((AutonomousHost host) -> host.getService().getAvailableSlots() >= minSize);
 
@@ -99,7 +144,7 @@ public class CompleteAutonomousHost extends AutonomousHost {
 
                 sendVisibilityQuery(hostToMerge);
             }
-        }
+        }*/
     }
 
     public void update(boolean simulateConnections) {
@@ -141,11 +186,33 @@ public class CompleteAutonomousHost extends AutonomousHost {
         }
     }
 
+    //------------------------------------------------------------------------------------------------------------------
+    // SERVICE MENAGEMENT
+    //------------------------------------------------------------------------------------------------------------------
+    public ServicePayload getService(){
+
+        return new ServicePayload(this.getCurrentStatus(), getUtilityValue(), this.getGroup(),
+                getInterface().getMaxClients());
+    }
+
+    private Double getUtilityValue(){
+
+        int nearby = ((this.getContextManager().getPreviousNearbyNodes() == null) ? 0 :
+                this.getContextManager().getPreviousNearbyNodes().size());
+
+        int actualCapacity = getInterface().getMaxClients() - ((this.getGroup() != null) ? this.getGroup().size() : 0);
+
+        return this.getContextManager().getResources()*resourcesWeight +
+                nearby*nearbyNodesWeight +
+                ((actualCapacity <= nearby) ? actualCapacity : nearby) * this.capacityNearbyWeight +
+                +this.getContextManager().getLastStabilityValue()*stabilityWeight;
+    }
+
 
     //------------------------------------------------------------------------------------------------------------------
     // MESSAGE MENAGEMENT
     //------------------------------------------------------------------------------------------------------------------
-    void sendVisibilityQuery(AutonomousHost host){
+    private void sendVisibilityQuery(AutonomousHost host){
 
         this.hostToMerge = host;
         this.mergePositiveResponses = 0;
@@ -228,4 +295,35 @@ public class CompleteAutonomousHost extends AutonomousHost {
             destroyGroup();
         }
     }
+
+    //------------------------------------------------------------------------------------------------------------------
+    // GROUP RESOURCES
+    //------------------------------------------------------------------------------------------------------------------
+    void openGroupResources(){
+        this.startGroupResources = this.contextManager.getBatteryLevel();
+    }
+
+    void closeGroupResources(){
+        this.startGroupResources = 0;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
+    // SETTINGS
+    //------------------------------------------------------------------------------------------------------------------
+    void parseSettings(Settings s){
+        this.travellingProb = s.getDouble(SETTINGS_TRAVELLING_PROB);
+        this.maxGroupResources = s.getDouble(SETTINGS_MAX_RES_GROUP);
+
+        this.resourcesWeight = s.getDouble(SETTINGS_UTILITY_RESOURCES_WEIGHT);
+        this.nearbyNodesWeight = s.getDouble(SETTINGS_UTILITY_NEARBY_NODES_WEIGHT);
+        this.capacityNearbyWeight = s.getDouble(SETTINGS_UTILITY_CAPACITY_NEARBY_WEIGHT);
+        this.stabilityWeight = s.getDouble(SETTINGS_UTILITY_STABILITY_WEIGHT);
+
+        this.contextManager.setStabilityWeights(s.getDouble(SETTINGS_PREV_STABILITY_WEIGHT),
+                s.getDouble(SETTINGS_CURRENT_STABILITY_WEIGHT));
+
+        this.contextManager.setStabilityWindowSize(s.getDouble(SETTINGS_STABILITY_WINDOW_S));
+    }
+
+
 }

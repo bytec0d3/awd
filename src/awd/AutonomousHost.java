@@ -10,20 +10,10 @@ import java.util.*;
 public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHost>{
 
     private static final String SETTINGS_NAMESPACE = "AutonomousHost";
-    private static final String SETTINGS_DECISION_TIME_S = "decisionTimeS";
+    private static final String SETTINGS_DECISION_TIME_S = "decisionTime";
     public static final String SETTINGS_MAX_CLIENTS = "maxClients_";
-    private static final String SETTINGS_TRAVELLING_PROB = "travellingProb";
-    private static final String SETTINGS_MAX_RES_GROUP = "maxGroupRes";
-    private static final String SETTINGS_PREV_STABILITY_WEIGHT = "prevStabilityWeight";
-    private static final String SETTINGS_CURRENT_STABILITY_WEIGHT = "currentStabilityWeight";
-    private static final String SETTINGS_STABILITY_WINDOW_S = "stabilityWindowS";
-    private static final String SETTINGS_UTILITY_RESOURCES_WEIGHT = "utility_resourcesWeight";
-    private static final String SETTINGS_UTILITY_REACHABLE_NODES_WEIGHT = "utility_reachableNodesWeight";
-    private static final String SETTINGS_UTILITY_NEARBY_NODES_WEIGHT = "utility_nearbyNodesWeight";
-    private static final String SETTINGS_UTILITY_STABILITY_WEIGHT = "utility_stabilityWeight";
 
     private double decisionTimeS;
-    double travellingProb;
     private double lastDecision = 0;
 
     private static final String GROUP_INFO_MESSAGE_ID = "g";
@@ -43,10 +33,6 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
     private String groupName;
     private DTNHost currentAP;
     private Set<DTNHost> group;
-
-    // The maximum percentage of resources used by the AP to maintain the group active
-    double maxGroupResources;
-    double startGroupResources;
 
     /**
      * Creates a new DTNHost.
@@ -86,22 +72,9 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
         else
             this.getInterface().setRandomMaxClients();
 
-        //CompleteAutonomousHost settings
-        if(this.getClass().getName().compareTo(CompleteAutonomousHost.class.getName()) == 0){
-            this.travellingProb = s.getDouble(SETTINGS_TRAVELLING_PROB);
-            this.maxGroupResources = s.getDouble(SETTINGS_MAX_RES_GROUP);
 
-            this.contextManager.setUtilityFunctionWeights(
-                    s.getDouble(SETTINGS_UTILITY_RESOURCES_WEIGHT),
-                    s.getDouble(SETTINGS_UTILITY_REACHABLE_NODES_WEIGHT),
-                    s.getDouble(SETTINGS_UTILITY_NEARBY_NODES_WEIGHT),
-                    s.getDouble(SETTINGS_UTILITY_STABILITY_WEIGHT));
-
-            this.contextManager.setStabilityWeights(s.getDouble(SETTINGS_PREV_STABILITY_WEIGHT),
-                    s.getDouble(SETTINGS_CURRENT_STABILITY_WEIGHT));
-
-            this.contextManager.setStabilityWindowSize(s.getDouble(SETTINGS_STABILITY_WINDOW_S));
-        }
+        if(this.getClass().getName().compareTo(CompleteAutonomousHost.class.getName()) == 0)
+            ((CompleteAutonomousHost)this).parseSettings(s);
     }
 
     public String toString(){
@@ -294,7 +267,7 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
         return retVal;
     }
 
-    void handleGroupInfoMessage(Message message, AutonomousHost host){
+    private void handleGroupInfoMessage(Message message, AutonomousHost host){
 
         Set<AutonomousHost> members = new HashSet<>();
         for(int i=0; i<message.getSize(); i++)
@@ -303,7 +276,7 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
         updateGroup(members);
     }
 
-    void handleGroupBye(Message message, AutonomousHost host){
+    private void handleGroupBye(Message message, AutonomousHost host){
 
         if(host == this.currentAP){
             Logger.print(this, "Received GROUP_BYE from the AP ("+host+")");
@@ -318,11 +291,7 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
     //------------------------------------------------------------------------------------------------------------------
     // LOCAL SERVICE MANAGEMENT
     //------------------------------------------------------------------------------------------------------------------
-    public ServicePayload getService(){
-
-        return new ServicePayload(this.currentStatus, this.currentAP, this.contextManager.evalContext(),
-                this.getGroup(), getInterface().getMaxClients());
-    }
+    public abstract ServicePayload getService();
 
     //------------------------------------------------------------------------------------------------------------------
     // STATUS MANAGEMENT
@@ -356,8 +325,9 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
             this.group = new HashSet<>();
 
             // New group created and I am the AP of the group
-            if(this.getCurrentStatus() == HOST_STATUS.AP)
-                this.startGroupResources = this.contextManager.getBatteryLevel();
+            if(this.getCurrentStatus() == HOST_STATUS.AP &&
+                    this.getClass().getName().compareTo(CompleteAutonomousHost.class.getName()) == 0)
+                ((CompleteAutonomousHost)this).openGroupResources();
         }
         this.group.add(host);
     }
@@ -380,9 +350,12 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
 
     private void clearGroup(){
         this.group = null;
-        this.startGroupResources = 0;
+
         setCurrentAP(this);
         setCurrentStatus(HOST_STATUS.AP);
+
+        if(this.getClass().getName().compareTo(CompleteAutonomousHost.class.getName()) == 0)
+            ((CompleteAutonomousHost)this).closeGroupResources();
     }
 
     //------------------------------------------------------------------------------------------------------------------
@@ -418,10 +391,10 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
             @Override
             public int compare(DTNHost o1, DTNHost o2) {
 
-                AutonomousHost ah1 = (AutonomousHost) o1;
-                AutonomousHost ah2 = (AutonomousHost) o2;
+                CompleteAutonomousHost ah1 = (CompleteAutonomousHost) o1;
+                CompleteAutonomousHost ah2 = (CompleteAutonomousHost) o2;
 
-                int i = ah1.contextManager.evalContext().compareTo(ah2.contextManager.evalContext());
+                int i = ah1.getService().getUtilityValue().compareTo(ah2.getService().getUtilityValue());
                 if (i == 0) {
                     i = ((Integer) ah1.getAddress()).compareTo(ah2.getAddress());
                 }

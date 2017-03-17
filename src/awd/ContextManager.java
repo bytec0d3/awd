@@ -22,44 +22,34 @@ public class ContextManager {
     private double stabilityWindowSize;
     private double lastStabilityUpdate;
     private double lastStabilityValue;
-    private List<Integer> previousNearbynodes; //List of addresses
+    private List<Integer> previousNearbyNodes; //List of addresses
     private List<Double> jaccards = new ArrayList<>();
-    private double lastStabilityWeight = 0.5;
-    private double currentStabilityWeight = 0.5;
+
+    private double lastStabilityWeight;
+    private double currentStabilityWeight;
 
 
     private float battery = 1.0f;
-    private int reachableNodes;
 
 
     private Integer lastUpdate = null;
     private AutonomousHost.HOST_STATUS lastStatus = null;
     private Integer lastGroupSize = null;
 
-    private double resourcesWeight, reachableNodesWeight, nearbyNodesWeight, stabilityWeight;
-
     void setStabilityWeights(double prev, double current){
         this.lastStabilityWeight = prev;
         this.currentStabilityWeight = current;
     }
 
-    void setUtilityFunctionWeights(double resources, double reachable, double nearby, double stability){
-
-        this.resourcesWeight = resources;
-        this.reachableNodesWeight = reachable;
-        this.nearbyNodesWeight = nearby;
-        this.stabilityWeight = stability;
-
-    }
     void setStabilityWindowSize(double stabilityWindowSize){this.stabilityWindowSize = stabilityWindowSize;}
 
     private void updateStability(List<Integer> currentNearbyNodes){
 
-        if(previousNearbynodes == null) this.previousNearbynodes = new ArrayList<>();
+        if(previousNearbyNodes == null) this.previousNearbyNodes = new ArrayList<>();
         else {
 
-            this.jaccards.add(jaccard(this.previousNearbynodes, currentNearbyNodes));
-            this.previousNearbynodes = currentNearbyNodes;
+            this.jaccards.add(jaccard(this.previousNearbyNodes, currentNearbyNodes));
+            this.previousNearbyNodes = currentNearbyNodes;
 
             double currentTime = SimClock.getTime();
 
@@ -82,8 +72,6 @@ public class ContextManager {
         double jac = 0;
         if(previous.size() != 0 || current.size() != 0)
             jac = CollectionUtils.intersection(previous, current).size() / CollectionUtils.union(previous, current).size();
-
-        //Logger.print(null, "Jac: "+lastStabilityValue);
         return jac;
     }
 
@@ -94,7 +82,6 @@ public class ContextManager {
         int currentTime = (int) SimClock.getTime();
         double drop = 0;
 
-        this.reachableNodes = (group != null) ? group.size() : 0;
         updateStability(nearbyNodes);
 
         if(this.lastUpdate == null || currentTime > this.lastUpdate) {
@@ -124,12 +111,6 @@ public class ContextManager {
         }
     }
 
-    Double evalContext(){
-        return this.battery*resourcesWeight+
-                this.reachableNodes*reachableNodesWeight+
-                ((this.previousNearbynodes == null) ? 0 : this.previousNearbynodes.size())*nearbyNodesWeight
-                +this.lastStabilityValue*stabilityWeight;
-    }
     public float getBatteryLevel(){ return this.battery; }
 
     private double getScanningDrop(float hourDelta){
@@ -155,5 +136,17 @@ public class ContextManager {
     private double getClientSlope(int groupSize){
 
         return CLIENT_SLOPE*groupSize + CLIENT_INTERCEPT;
+    }
+
+    List<Integer> getPreviousNearbyNodes() {
+        return previousNearbyNodes;
+    }
+
+    float getResources() {
+        return battery;
+    }
+
+    double getLastStabilityValue() {
+        return lastStabilityValue;
     }
 }
