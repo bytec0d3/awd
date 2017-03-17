@@ -11,6 +11,7 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
 
     private static final String SETTINGS_NAMESPACE = "AutonomousHost";
     private static final String SETTINGS_DECISION_TIME_S = "decisionTimeS";
+    public static final String SETTINGS_MAX_CLIENTS = "maxClients_";
     private static final String SETTINGS_TRAVELLING_PROB = "travellingProb";
     private static final String SETTINGS_MAX_RES_GROUP = "maxGroupRes";
     private static final String SETTINGS_STABILITY_WINDOW_S = "stabilityWindowS";
@@ -78,6 +79,10 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
         Settings s = new Settings(SETTINGS_NAMESPACE);
         //Common settings
         this.decisionTimeS = s.getDouble(SETTINGS_DECISION_TIME_S);
+        if(s.contains(SETTINGS_MAX_CLIENTS+this.name))
+            this.getInterface().setMaxClients(s.getInt(SETTINGS_MAX_CLIENTS + this.name));
+        else
+            this.getInterface().setRandomMaxClients();
 
         //CompleteAutonomousHost settings
         if(this.getClass().getName().compareTo(CompleteAutonomousHost.class.getName()) == 0){
@@ -88,7 +93,7 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
                     s.getDouble(SETTINGS_UTILITY_RESOURCES_WEIGHT),
                     s.getDouble(SETTINGS_UTILITY_REACHABLE_NODES_WEIGHT),
                     s.getDouble(SETTINGS_UTILITY_NEARBY_NODES_WEIGHT),
-                    s.getDouble(SETTINGS_STABILITY_WINDOW_S));
+                    s.getDouble(SETTINGS_UTILITY_STABILITY_WEIGHT));
 
             this.contextManager.setStabilityWindowSize(s.getDouble(SETTINGS_STABILITY_WINDOW_S));
         }

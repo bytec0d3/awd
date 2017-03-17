@@ -1,8 +1,8 @@
 package interfaces;
 
 import awd.AutonomousHost;
-import awd.Logger;
 import core.*;
+import util.RandomGen;
 
 import java.util.*;
 
@@ -10,7 +10,7 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
 
     //Settings fields
     private static final String BLACKLIST_PREVIOUS_AP_TIME = "BL_prevAP_S";
-    private static final String MAX_CLIENTS_SIZE_ENTRY = "maxClients";
+    private static final String SETTINGS_GENERAL_MAX_CLIENTS = "generalMaxClients";
     private static final String MAX_TIME_TO_CONNECT = "maxTimeToConnect";
     private static final String MAX_FIRST_SCAN_DELAY = "maxFirstScanDelay";
 
@@ -22,7 +22,9 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
 
     private double rewiringProbability = 0.8;
 
-    private int maxClients = 10;
+    private int generalMinClients;
+    private int generalMaxClients;
+    private int maxClients;
 
     private AutonomousHost myHost = (AutonomousHost) this.host;
     private Collection<NetworkInterface> nearbyInterfaces;
@@ -30,8 +32,6 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
 
     private double scanInterval;
     private double lastScanTime;
-
-    private Random random = new Random();
 
     //Lazy connect
     private double maxTimeToConnect = 0;
@@ -53,8 +53,9 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
 
         this.blackListPreviousAPTime = s.getInt(BLACKLIST_PREVIOUS_AP_TIME);
 
-        if(s.contains(MAX_CLIENTS_SIZE_ENTRY))
-            this.maxClients = s.getInt(MAX_CLIENTS_SIZE_ENTRY);
+        int[] maxClientsRange = s.getCsvInts(SETTINGS_GENERAL_MAX_CLIENTS);
+        this.generalMinClients = maxClientsRange[0];
+        this.generalMaxClients = maxClientsRange[1];
 
         if(s.contains(MAX_TIME_TO_CONNECT))
             this.maxTimeToConnect = s.getDouble(MAX_TIME_TO_CONNECT);
@@ -74,7 +75,8 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
         super(ni);
 
         this.blackListPreviousAPTime = ni.blackListPreviousAPTime;
-        this.maxClients = ni.maxClients;
+        this.generalMinClients = ni.generalMinClients;
+        this.generalMaxClients = ni.generalMaxClients;
         this.maxTimeToConnect = ni.maxTimeToConnect;
         this.maxFirstScanDelay = ni.maxFirstScanDelay;
         if(ni.firstScanDelay) {
@@ -110,6 +112,10 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
         return nearbyHosts;
     }
     public int getMaxClients(){return this.maxClients;}
+    public void setMaxClients(int maxClients){this.maxClients = maxClients;}
+    public void setRandomMaxClients(){
+        this.maxClients = RandomGen.getRandomIntInRange(this.generalMinClients, this.generalMaxClients);
+    }
 
     /**
      * Updates the state of current connections (i.e. tears down connections
