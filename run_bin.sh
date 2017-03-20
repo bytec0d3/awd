@@ -65,4 +65,4 @@ check_arguments "$@"
 
 jar_path="awd-sim.jar"
 
-java -jar ${jar_path} -b 1 ${SCENARIO_CONFIG} ${PARAMETERS_CONFIG} ${MAX_CLIENTS_CONFIG}
+java -jar ${jar_path} ${SCENARIO_CONFIG} ${PARAMETERS_CONFIG} ${MAX_CLIENTS_CONFIG}

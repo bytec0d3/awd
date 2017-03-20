@@ -31,12 +31,13 @@ for tr in "${TRANSMIT_RANGES[@]}"; do
     AutonomousHost.prevStabilityWeight = 0.4
     AutonomousHost.currentStabilityWeight = 0.6
 
-    firstinterface.transmitRange = ${tr}
+    firstinterface.transmitRange = 100
     firstinterface.scanInterval = 0
     firstinterface.maxDelayFirstScan = 5
     firstinterface.blacklistTime = 300
     Scenario.name = "${base_name}"_dt_"${t}"_tr"${tr} > parameters_dt_${t}_tr_${tr}.conf
 
     ./run_bin.sh -s ${scenario} -p parameters_dt_${t}_tr_${tr}.conf -m ${max_clients_file} &
+    exit
   done
 done
