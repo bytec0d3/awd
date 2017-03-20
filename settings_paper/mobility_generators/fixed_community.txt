@@ -17,7 +17,7 @@ Scenario.updateInterval = 1
 Scenario.endTime = 28800
 Scenario.nrofHostGroups = 1
 Scenario.hostType = SimpleAutonomousHost
-AutonomousHost.decisionTimeS = 60
+AutonomousHost.decisionTime = 60
 
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -26,8 +26,8 @@ AutonomousHost.decisionTimeS = 60
 firstinterface.type = AutonomousGroupInterface
 firstinterface.transmitRange = 30
 firstinterface.transmitSpeed = 250M
-firstinterface.BL_prevAP_S = 300
-firstinterface.generalMaxClients = 5, 10
+firstinterface.blacklistTime = 300
+firstinterface.generalMaxClients = 4, 10
 
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -68,4 +68,4 @@ MovementModel.worldSize = 1000, 1000
 Report.nrofReports = 1
 Report.reportDir = reports/
 Report.report1 = Autonomous_NodePositionReport
-Report.report1 = Autonomous_MaxClientsReport
+Report.report2 = Autonomous_MaxClientsReport

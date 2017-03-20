@@ -71,6 +71,6 @@ public class SimpleAutonomousHost extends AutonomousHost {
 
     public ServicePayload getService(){
 
-        return new ServicePayload(this.getCurrentStatus(), this.getGroup());
+        return new ServicePayload(this.getCurrentStatus(), this.getGroup(), this.getInterface().getMaxClients());
     }
 }

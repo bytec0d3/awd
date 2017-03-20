@@ -14,8 +14,10 @@ public class Autonomous_MaxClientsReport extends Report {
 
         for(DTNHost h : SimScenario.getInstance().getHosts()){
 
-            AutonomousHost host = (AutonomousHost)h;
-            write(AutonomousHost.SETTINGS_MAX_CLIENTS + host.name + "=" + host.getInterface().getMaxClients());
+            if(h.getInterfaces().size() != 0) {
+                AutonomousHost host = (AutonomousHost) h;
+                write(AutonomousHost.SETTINGS_MAX_CLIENTS + host.name + "=" + host.getInterface().getMaxClients());
+            }
         }
 
         super.done();

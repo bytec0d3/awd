@@ -30,6 +30,8 @@ public class CompleteAutonomousHost extends AutonomousHost {
 
     private double travellingProb;
 
+    private int travelling, merges;
+
     //Merge
     private AutonomousHost hostToMerge;
     private int mergePositiveResponses;
@@ -98,6 +100,7 @@ public class CompleteAutonomousHost extends AutonomousHost {
         if(r <= this.travellingProb / this.getGroup().size()){
             getInterface().addPreviousAPInBlacklist(this.getCurrentAP());
             destroyGroup();
+            this.travelling++;
         }
     }
 
@@ -129,8 +132,13 @@ public class CompleteAutonomousHost extends AutonomousHost {
                         .max(Comparator.comparing(c -> c.getService().getUtilityValue()))
                         .orElse(null);
 
-                if(bestCandidate.getService().getUtilityValue() > this.getService().getUtilityValue())
+                if(bestCandidate.getService().getUtilityValue() > this.getService().getUtilityValue()) {
+                    Logger.print(this, "======================================================");
+                    Logger.print(this, "Intention to merge to "+bestCandidate.name);
+                    Logger.print(this, "group: "+printGroup());
+                    Logger.print(this, "======================================================");
                     sendVisibilityQuery(bestCandidate);
+                }
             }
         }
 
@@ -145,6 +153,13 @@ public class CompleteAutonomousHost extends AutonomousHost {
                 sendVisibilityQuery(hostToMerge);
             }
         }*/
+    }
+
+    private String printGroup(){
+        List<String> g = new ArrayList<>();
+        for(DTNHost h : this.getGroup()) g.add(h.name);
+
+        return Arrays.toString(g.toArray());
     }
 
     public void update(boolean simulateConnections) {
@@ -178,7 +193,7 @@ public class CompleteAutonomousHost extends AutonomousHost {
                 if (getCurrentStatus() == HOST_STATUS.CONNECTED) {
                     evaluateTravelling();
 
-                } else if (getCurrentStatus() == HOST_STATUS.AP) {
+                } else if (getCurrentStatus() == HOST_STATUS.AP && this.getGroup() != null) {
                     // If I am a GO, evaluate to merge my group with another one
                     evaluateMerge();
                 }
@@ -217,24 +232,24 @@ public class CompleteAutonomousHost extends AutonomousHost {
         this.hostToMerge = host;
         this.mergePositiveResponses = 0;
 
-        if(this.getGroup() != null){
+        List<DTNHost> members = new ArrayList<>();
+        members.addAll(this.getGroup());
 
-            for (DTNHost node : getGroup()){
-
-                String messageId = VISIBILITY_QUERY_MESSAGE_ID+":"+System.currentTimeMillis()+":"+host.getAddress();
+        members.forEach((node) -> {
+            if(this.getGroup() != null && this.getGroup().contains(node)) {
+                Logger.print(this, "Send visibility message to " + node.name);
+                String messageId = VISIBILITY_QUERY_MESSAGE_ID + ":" + System.currentTimeMillis() + ":" + host.getAddress();
                 Message message = new Message(this, node, messageId, 0);
                 createNewMessage(message);
                 sendMessage(messageId, node);
-
             }
-        }
+        });
     }
 
     private void sendVisibilityResponse(boolean visibility, DTNHost node){
 
         int visible = (visibility) ? 1 : 0;
-
-        String messageId = VISIBILITY_RESPONSE_MESSAGE_ID + ":" + System.currentTimeMillis() + ":" + visible;
+        String messageId = VISIBILITY_RESPONSE_MESSAGE_ID + ":" + System.currentTimeMillis() + new Random().nextInt(9000)+ ":" + visible;
         Message message = new Message(this, node, messageId, 0);
         createNewMessage(message);
         sendMessage(messageId, node);
@@ -271,6 +286,8 @@ public class CompleteAutonomousHost extends AutonomousHost {
             }
         }
 
+        //Logger.print(this, "Visibility check for "+address+": "+visible);
+
         sendVisibilityResponse(visible, host);
     }
 
@@ -279,11 +296,18 @@ public class CompleteAutonomousHost extends AutonomousHost {
         int visibility = Integer.parseInt(message.getId().split(":")[2]);
         if(visibility == 1) this.mergePositiveResponses++;
 
+        Logger.print(this, message.getFrom()+": "+ ((visibility == 0)? "FALSE" : "TRUE"));
+
         if(this.mergePositiveResponses >= (this.getGroup().size() / 2) + 1){
             sendMergeIntent(this.hostToMerge.getAddress());
+            Logger.print(this, "Destroying group");
             destroyGroup();
             this.getInterface().connect(this.hostToMerge.getInterface());
             Logger.print(this, "Merge to "+this.hostToMerge);
+            this.merges++;
+            Logger.print(this, "======================================================");
+            Logger.print(this, "End merge");
+            Logger.print(this, "======================================================");
         }
     }
 
@@ -325,5 +349,11 @@ public class CompleteAutonomousHost extends AutonomousHost {
         this.contextManager.setStabilityWindowSize(s.getDouble(SETTINGS_STABILITY_WINDOW_S));
     }
 
+    public int getTravelling() {
+        return travelling;
+    }
 
+    public int getMerges() {
+        return merges;
+    }
 }

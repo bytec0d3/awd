@@ -9,14 +9,27 @@ import java.util.*;
  */
 public class Autonomous_NodePositionReport extends Report implements UpdateListener, MovementListener {
 
-    private List<Loc> locations = new ArrayList<>();
+    private double minX = Double.MAX_VALUE;
+    private double minY = Double.MAX_VALUE;
+    private double maxX = 0;
+    private double maxY = 0;
 
     @Override
     public void updated(List<DTNHost> hosts) {
 
         if(!isWarmup()) {
+            String time = formatTime();
+
             for (DTNHost host : hosts) {
-                locations.add(new Loc(formatTime(), host.name, host.getLocation().getX(), host.getLocation().getY()));
+                double x = host.getLocation().getX();
+                double y = host.getLocation().getY();
+
+                if(x<minX) minX = x;
+                if(x>maxX) maxX = x;
+                if(y<minY) minY = y;
+                if(y>maxY) maxY = y;
+
+                write(time+" "+host.name+" "+x+" "+y);
             }
 
         }
@@ -28,13 +41,24 @@ public class Autonomous_NodePositionReport extends Report implements UpdateListe
 
     public void done() {
 
-        double maxTime = SimScenario.getInstance().getEndTime();
+        /*double maxTime = SimScenario.getInstance().getEndTime();
         double minX = 0, maxX = SimScenario.getInstance().getWorldSizeX();
         double minY = 0, maxY = SimScenario.getInstance().getWorldSizeY();
 
         write("0 " + maxTime + " " + minX + " " + maxX + " " + minY + " " + maxY);
 
-        for(Loc loc : locations) write(loc.toString());
+        for(Loc loc : locations) write(loc.toString());*/
+
+        String time = formatTime();
+
+        for (DTNHost host : SimScenario.getInstance().getHosts()) {
+            double x = host.getLocation().getX();
+            double y = host.getLocation().getY();
+
+            write(time+" "+host.name+" "+x+" "+y);
+        }
+
+        write("0 "+time+" "+minX+" "+maxX+" "+minY+" "+maxY);
 
         super.done();
     }
@@ -44,7 +68,8 @@ public class Autonomous_NodePositionReport extends Report implements UpdateListe
 
     @Override
     public void initialLocation(DTNHost host, Coord location) {
-        locations.add(new Loc("0", host.name, location.getX(), location.getY()));
+        write("0 "+host.name+" "+location.getX()+" "+location.getY());
+        //locations.add(new Loc("0", host.name, location.getX(), location.getY()));
     }
 
     class Loc{

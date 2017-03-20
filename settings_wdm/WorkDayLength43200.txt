@@ -3,9 +3,9 @@ Scenario.name = default_scenario
 Scenario.simulateConnections = true
 Scenario.updateInterval = 1
 # 43k ~= 12h
-Scenario.endTime = 700k
+Scenario.endTime = 86400
 
-Report.warmup = 200000
+Report.warmup = 0
 Group.msgTtl = 1433
 
 Scenario.nrofHostGroups = 17
@@ -23,7 +23,7 @@ Group.waitTime = 0, 0
 Group.speed = 0.5, 1.5
 
 Group.nrOfOffices = 50
-Group.workDayLength = 43200
+Group.workDayLength = 28800
 Group.probGoShoppingAfterWork = 0.5
 Group.nrOfMeetingSpots = 10
 
@@ -31,6 +31,8 @@ Group.officeWaitTimeParetoCoeff = 0.5
 Group.officeMinWaitTime = 10
 Group.officeMaxWaitTime = 100000
 Group.officeSize = 100
+
+Group.nrofInterfaces = 0
 
 Group.nrofHosts = 0
 
@@ -238,6 +240,7 @@ Group17.nrofHosts = 10
 
 
 # max number of external events to preload (default = 500)
+Events.nrof = 0
 ExternalEvents.nrofPreload = 500
 # path to external events file
 ExternalEvents.filePath = ee/700_events_1000_nodes_700ks.txt
@@ -250,7 +253,7 @@ MovementModel.rngSeed = [2; 8372; 98092; 18293; 777]
 # World's size for Movement Models without implicit size (width, height; meters)
 MovementModel.worldSize = 10000, 8000
 # How long time to move hosts in the world before real simulation
-MovementModel.warmup = 43000
+MovementModel.warmup = 0
 
 ## Map based movement -movement model specific settings
 MapBasedMovement.nrofMapFiles = 1
@@ -260,21 +263,22 @@ MapBasedMovement.mapFile1 = data/HelsinkiMedium/roads.wkt
 ## Reports - all report names have to be valid report classes
 
 # how many reports to load
-Report.nrofReports = 8
+Report.nrofReports = 1
 # default directory of reports (can be overriden per Report with output setting)
 Report.reportDir = [reports/WorkDayLength43200/1; reports/WorkDayLength43200/2; reports/WorkDayLength43200/3; reports/WorkDayLength43200/4; reports/WorkDayLength43200/5]
 #Report.reportDir = [reports/r1; reports/r2]
 #Report.reportDir = reports/
 
 # Report classes to load
-Report.report1 = InterContactTimesReport
-Report.report2 = ContactTimesReport
-Report.report3 = UniqueEncountersReport
-Report.report4 = TotalEncountersReport
-Report.report5 = EncountersVSUniqueEncountersReport
-Report.report6 = ContactsDuringAnICTReport
-Report.report7 = MessageStatsReport
-Report.report8 = ContactsPerHourReport
+#Report.report1 = InterContactTimesReport
+#Report.report2 = ContactTimesReport
+#Report.report3 = UniqueEncountersReport
+#Report.report4 = TotalEncountersReport
+#Report.report5 = EncountersVSUniqueEncountersReport
+#Report.report6 = ContactsDuringAnICTReport
+#Report.report7 = MessageStatsReport
+#Report.report8 = ContactsPerHourReport
+Report.report1 = Autonomous_NodePositionReport
 
 ## Default settings for some routers settings
 ProphetRouter.secondsInTimeUnit = 30

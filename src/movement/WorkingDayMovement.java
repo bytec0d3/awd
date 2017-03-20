@@ -4,8 +4,10 @@
  */
 package movement;
 
+import awd.Logger;
 import core.Coord;
 import core.Settings;
+import core.SimClock;
 
 /**
  *

@@ -25,19 +25,22 @@ public class Autonomous_AverageStats extends Report implements UpdateListener {
         double[] ratios = new double[hosts.size()];
         double[] batteries = new double[hosts.size()];
 
+        //TODO: fix per nodi che non hanno interfaccia
         int i=0;
         for(DTNHost host : hosts){
             AutonomousHost autonomousHost = (AutonomousHost)host;
 
-            int group = (autonomousHost.getGroup() != null) ? autonomousHost.getGroup().size() : 0;
-            int nearby = autonomousHost.getInterface().getNearbyNodesIds().size();
+            if(host.getInterfaces().size() != 0) {
+                int group = (autonomousHost.getGroup() != null) ? autonomousHost.getGroup().size() : 0;
+                int nearby = autonomousHost.getInterface().getNearbyNodesIds().size();
 
-            double ratio = (float)group / (float)nearby;
+                double ratio = (float) group / (float) nearby;
 
-            //Logger.print(host, group+" - " + nearby + " - " + String.valueOf(ratio));
-            ratios[i] = ratio;
-            batteries[i] = autonomousHost.getContextManager().getBatteryLevel();
-            i++;
+                //Logger.print(host, group+" - " + nearby + " - " + String.valueOf(ratio));
+                ratios[i] = ratio;
+                batteries[i] = autonomousHost.getContextManager().getBatteryLevel();
+                i++;
+            }
         }
         ratioStats.add(new Pair<>(formatTime(), new Stats(ratios)));
         batteryStats.add(new Pair<>(formatTime(), new Stats(batteries)));

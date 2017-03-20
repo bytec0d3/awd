@@ -21,10 +21,11 @@ public class ServicePayload {
         if(group != null) groupMembers = group;
     }
 
-    public ServicePayload(AutonomousHost.HOST_STATUS status, Set<DTNHost> group){
+    public ServicePayload(AutonomousHost.HOST_STATUS status, Set<DTNHost> group, int maxClients){
         this.hostStatus = status;
         this.groupMembers = new HashSet<>();
         if(group != null) groupMembers = group;
+        this.maxClients = maxClients;
     }
 
     //-----------------------------------------------------------------------------------------------

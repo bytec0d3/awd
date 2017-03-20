@@ -67,11 +67,12 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
         Settings s = new Settings(SETTINGS_NAMESPACE);
         //Common settings
         this.decisionTimeS = s.getDouble(SETTINGS_DECISION_TIME_S);
-        if(s.contains(SETTINGS_MAX_CLIENTS+this.name))
-            this.getInterface().setMaxClients(s.getInt(SETTINGS_MAX_CLIENTS + this.name));
-        else
-            this.getInterface().setRandomMaxClients();
-
+        if(getInterfaces().size() != 0) {
+            if (s.contains(SETTINGS_MAX_CLIENTS + this.name))
+                this.getInterface().setMaxClients(s.getInt(SETTINGS_MAX_CLIENTS + this.name));
+            else
+                this.getInterface().setRandomMaxClients();
+        }
 
         if(this.getClass().getName().compareTo(CompleteAutonomousHost.class.getName()) == 0)
             ((CompleteAutonomousHost)this).parseSettings(s);

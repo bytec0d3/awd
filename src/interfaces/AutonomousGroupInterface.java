@@ -51,9 +51,11 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
 
         this.blackListPreviousAPTime = s.getInt(BLACKLIST_PREVIOUS_AP_TIME);
 
-        int[] maxClientsRange = s.getCsvInts(SETTINGS_GENERAL_MAX_CLIENTS);
-        this.generalMinClients = maxClientsRange[0];
-        this.generalMaxClients = maxClientsRange[1];
+        if(s.contains(SETTINGS_GENERAL_MAX_CLIENTS)){
+            int[] maxClientsRange = s.getCsvInts(SETTINGS_GENERAL_MAX_CLIENTS);
+            this.generalMinClients = maxClientsRange[0];
+            this.generalMaxClients = maxClientsRange[1];
+        }
 
         if(s.contains(MAX_TIME_TO_CONNECT))
             this.maxTimeToConnect = s.getDouble(MAX_TIME_TO_CONNECT);
@@ -108,7 +110,9 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
 
         return nearbyHosts;
     }
-    public int getMaxClients(){return this.maxClients;}
+    public int getMaxClients(){
+        return this.maxClients;
+    }
     public void setMaxClients(int maxClients){this.maxClients = maxClients;}
     public void setRandomMaxClients(){
         this.maxClients = RandomGen.getRandomIntInRange(this.generalMinClients, this.generalMaxClients);

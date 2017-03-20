@@ -238,9 +238,10 @@ Group17.nrofHosts = 10
 
 
 # max number of external events to preload (default = 500)
-ExternalEvents.nrofPreload = 500
+Events.nrof = 0
+#ExternalEvents.nrofPreload = 500
 # path to external events file
-ExternalEvents.filePath = ee/700_events_1000_nodes_700ks.txt
+#ExternalEvents.filePath = ee/700_events_1000_nodes_700ks.txt
 
 # seed for movement models' pseudo random number generator (default = 0)
 MovementModel.rngSeed = [2; 8372; 98092; 18293; 777]
