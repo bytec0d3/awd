@@ -2,30 +2,21 @@ package report;
 
 import awd.AutonomousHost;
 import core.DTNHost;
-import core.SimClock;
 import core.UpdateListener;
-import javafx.util.Pair;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.commons.math3.stat.descriptive.rank.Median;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
-/**
- * Created by mattia on 03/03/17.
- */
 public class Autonomous_AverageStats extends Report implements UpdateListener {
 
-    private List<Pair<String, Stats>> ratioStats = new ArrayList<>();
-    private List<Pair<String, Stats>> batteryStats = new ArrayList<>();
+    private List<Double> ratioStats = new ArrayList<>();
 
     @Override
     public void updated(List<DTNHost> hosts) {
 
-        double[] ratios = new double[hosts.size()];
-        double[] batteries = new double[hosts.size()];
-
-        //TODO: fix per nodi che non hanno interfaccia
         int i=0;
         for(DTNHost host : hosts){
             AutonomousHost autonomousHost = (AutonomousHost)host;
@@ -34,31 +25,16 @@ public class Autonomous_AverageStats extends Report implements UpdateListener {
                 int group = (autonomousHost.getGroup() != null) ? autonomousHost.getGroup().size() : 0;
                 int nearby = autonomousHost.getInterface().getNearbyNodesIds().size();
 
-                double ratio = (float) group / (float) nearby;
+                if(nearby != 0) ratioStats.add((double) group / (double) nearby);
 
-                //Logger.print(host, group+" - " + nearby + " - " + String.valueOf(ratio));
-                ratios[i] = ratio;
-                batteries[i] = autonomousHost.getContextManager().getBatteryLevel();
-                i++;
             }
         }
-        ratioStats.add(new Pair<>(formatTime(), new Stats(ratios)));
-        batteryStats.add(new Pair<>(formatTime(), new Stats(batteries)));
-
-        //Logger.print(null, ""+s.mean);
     }
 
     public void done() {
+        Stats s = new Stats(ratioStats);
 
-        for(int i=0; i<ratioStats.size(); i++){
-            String time = ratioStats.get(i).getKey();
-            Stats rs = ratioStats.get(i).getValue();
-            Stats bs = batteryStats.get(i).getValue();
-            write(time + "," +
-                    rs.mean + "," + rs.median + "," + rs.variance + "," + rs.std + "," +
-                    bs.mean + "," + bs.median + "," + bs.variance + "," + bs.std
-            );
-        }
+        write(s.mean + " " + s.median + " " + s.variance + " " + s.std);
 
         super.done();
 
@@ -67,20 +43,36 @@ public class Autonomous_AverageStats extends Report implements UpdateListener {
     class Stats{
         double mean, median, variance, std;
 
-        Stats(double[] data){
-            SummaryStatistics stats = new SummaryStatistics();
-            for(double val : data) stats.addValue(val);
+        Stats(List<Double> d){
 
-            mean = stats.getMean();
-            std = stats.getStandardDeviation();
-            variance = stats.getVariance();
+            double[] data = d.stream().mapToDouble(i->i).toArray();
+
+            mean = getMean(data);
+            variance = getVariance(mean, data);
+            std = getStdDev(variance);
 
             Median m = new Median();
             median = m.evaluate(data);
         }
-    }
 
-    private static String formatTime(){
-        return String.format("%.2f", SimClock.getTime());
+        private double getMean(double[] data) {
+            double sum = 0.0;
+            for(double a : data)
+                sum += a;
+            return sum/data.length;
+        }
+
+        private double getVariance(double mean, double[] data)
+        {
+            double temp = 0;
+            for(double a :data)
+                temp += (a-mean)*(a-mean);
+            return temp/data.length;
+        }
+
+        private double getStdDev(double variance)
+        {
+            return Math.sqrt(variance);
+        }
     }
 }

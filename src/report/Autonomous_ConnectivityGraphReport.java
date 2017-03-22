@@ -10,7 +10,7 @@ import java.util.*;
 /**
  * Created by mattia on 03/03/17.
  */
-public class Autonomous_ExploitReport extends Report implements UpdateListener {
+public class Autonomous_ConnectivityGraphReport extends Report implements UpdateListener {
 
     private HashMap<String, HashMap<String, NodeStats>> nodesData = new HashMap<>();
 
