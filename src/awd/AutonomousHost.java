@@ -29,6 +29,8 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
     private HOST_STATUS currentStatus;
     ContextManager contextManager;
 
+    private Set<Integer> fakeMessagesCache = new HashSet<>();
+
     //Group infos
     private String groupName;
     private DTNHost currentAP;
@@ -60,6 +62,9 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
         this.currentAP = this;
 
         parseSettings();
+
+        sendFakeMessage(this);
+        Logger.print(this, Arrays.toString(this.fakeMessagesCache.toArray()));
     }
 
     private void parseSettings(){
@@ -134,6 +139,10 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
 
             if(getGroup() != null && getGroup().size() == this.getInterface().getMaxClients()) {
                 Logger.print(this, "Rejecting connection from "+con.fromNode);
+                if(con.fromNode instanceof CompleteAutonomousHost){
+                    CompleteAutonomousHost h = (CompleteAutonomousHost)con.fromNode;
+                    h.connectionFailed(this);
+                }
                 getInterface().disconnect(con, ((AutonomousHost) con.fromNode).getInterface());
                 getInterface().connections.remove(con);
             }else {
@@ -182,6 +191,13 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
     //------------------------------------------------------------------------------------------------------------------
     // MESSAGES
     //------------------------------------------------------------------------------------------------------------------
+    void sendFakeMessage(AutonomousHost toHost){ toHost.receiveFakeMeggase(this.getAddress()); }
+    void receiveFakeMeggase(int message){
+        this.fakeMessagesCache.add(message);
+    }
+    public float getFakeMessagesCache(){return (float)this.fakeMessagesCache.size();}
+
+
     private void clearMessageQueue(){
         this.getRouter().messages = new HashMap<>();
     }
@@ -316,8 +332,8 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
     private void updateGroup(Set<AutonomousHost> members){
         if(this.currentStatus != HOST_STATUS.AP) {
             this.group = new HashSet<>();
-            for (AutonomousHost member : members) if (member != this) group.add(member);
-            group.add(this.getCurrentAP());
+            for (AutonomousHost member : members) if (member != this) addGroupMember(member);
+            addGroupMember(this.getCurrentAP());
         }
     }
 
@@ -331,6 +347,10 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
                 ((CompleteAutonomousHost)this).openGroupResources();
         }
         this.group.add(host);
+
+        if(host instanceof AutonomousHost){
+            sendFakeMessage((AutonomousHost)host);
+        }
     }
 
     private void removeGroupMember(DTNHost host){

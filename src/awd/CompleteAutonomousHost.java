@@ -89,6 +89,10 @@ public class CompleteAutonomousHost extends AutonomousHost {
         }
     }
 
+    void connectionFailed(AutonomousHost from){
+        getInterface().addPreviousAPInBlacklist(from);
+    }
+
     /**
      * Evaluate if the node should become a traveller or not.
      * If it becomes a traveller, first it adds the previous AP in blacklist, and then it performs the disconnection
@@ -133,10 +137,10 @@ public class CompleteAutonomousHost extends AutonomousHost {
                         .orElse(null);
 
                 if(bestCandidate.getService().getUtilityValue() > this.getService().getUtilityValue()) {
-                    Logger.print(this, "======================================================");
-                    Logger.print(this, "Intention to merge to "+bestCandidate.name);
-                    Logger.print(this, "group: "+printGroup());
-                    Logger.print(this, "======================================================");
+                    //Logger.print(this, "======================================================");
+                    //Logger.print(this, "Intention to merge to "+bestCandidate.name);
+                    //Logger.print(this, "group: "+printGroup());
+                    //Logger.print(this, "======================================================");
                     sendVisibilityQuery(bestCandidate);
                 }
             }
@@ -173,7 +177,7 @@ public class CompleteAutonomousHost extends AutonomousHost {
     private void checkGroupResources(){
 
         if(this.startGroupResources - this.contextManager.getBatteryLevel() >= this.maxGroupResources) {
-            Logger.print(this, "Group resources limit reached");
+            //Logger.print(this, "Group resources limit reached");
             destroyGroup();
         }
     }
@@ -237,7 +241,7 @@ public class CompleteAutonomousHost extends AutonomousHost {
 
         members.forEach((node) -> {
             if(this.getGroup() != null && this.getGroup().contains(node)) {
-                Logger.print(this, "Send visibility message to " + node.name);
+                //Logger.print(this, "Send visibility message to " + node.name);
                 String messageId = VISIBILITY_QUERY_MESSAGE_ID + ":" + System.currentTimeMillis() + ":" + host.getAddress();
                 Message message = new Message(this, node, messageId, 0);
                 createNewMessage(message);
@@ -296,18 +300,18 @@ public class CompleteAutonomousHost extends AutonomousHost {
         int visibility = Integer.parseInt(message.getId().split(":")[2]);
         if(visibility == 1) this.mergePositiveResponses++;
 
-        Logger.print(this, message.getFrom()+": "+ ((visibility == 0)? "FALSE" : "TRUE"));
+        //Logger.print(this, message.getFrom()+": "+ ((visibility == 0)? "FALSE" : "TRUE"));
 
         if(this.mergePositiveResponses >= (this.getGroup().size() / 2) + 1){
             sendMergeIntent(this.hostToMerge.getAddress());
-            Logger.print(this, "Destroying group");
+            //Logger.print(this, "Destroying group");
             destroyGroup();
             this.getInterface().connect(this.hostToMerge.getInterface());
-            Logger.print(this, "Merge to "+this.hostToMerge);
+            //Logger.print(this, "Merge to "+this.hostToMerge);
             this.merges++;
-            Logger.print(this, "======================================================");
-            Logger.print(this, "End merge");
-            Logger.print(this, "======================================================");
+            //Logger.print(this, "======================================================");
+            //Logger.print(this, "End merge");
+            //Logger.print(this, "======================================================");
         }
     }
 
@@ -315,7 +319,7 @@ public class CompleteAutonomousHost extends AutonomousHost {
 
         if(this.hostToMerge != null) {
             this.getInterface().connect(this.hostToMerge.getInterface());
-            Logger.print(this, "Following the AP and merge to "+this.hostToMerge);
+            //Logger.print(this, "Following the AP and merge to "+this.hostToMerge);
             destroyGroup();
         }
     }
