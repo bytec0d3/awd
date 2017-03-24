@@ -1,0 +1,72 @@
+#-----------------------------------------------------------------------------------------------------------------------
+## FIXED COMMUNITY  (e.g., a big office scenario)
+#
+#   TIME: 8h (28800 s)
+#   Scenario size: 60m of radius
+#   Nodes: 20 meters
+#   Nodes' speed: 0 m/s
+#-----------------------------------------------------------------------------------------------------------------------
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+## Scenario settings
+#-----------------------------------------------------------------------------------------------------------------------
+Scenario.name = grid_scenario
+Scenario.simulateConnections = true
+Scenario.updateInterval = 1
+Scenario.endTime = 28800
+Scenario.nrofHostGroups = 1
+Scenario.hostType = SimpleAutonomousHost
+AutonomousHost.decisionTime = 60
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+## Interface settings
+#-----------------------------------------------------------------------------------------------------------------------
+firstinterface.type = AutonomousGroupInterface
+firstinterface.transmitRange = 30
+firstinterface.transmitSpeed = 250M
+firstinterface.blacklistTime = 300
+firstinterface.generalMaxClients = 4, 10
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+## GROUPS settings
+#-----------------------------------------------------------------------------------------------------------------------
+Group.movementModel = GridLocation
+Group.GridLocation.rows = 20
+Group.GridLocation.spacing = 2
+Group.GridLocation.location = 300,300
+Group.router = EpidemicRouter
+Group.bufferSize = 5M
+Group.waitTime = 0, 120
+Group.nrofInterfaces = 1
+Group.interface1 = firstinterface
+Group.speed = 0.0, 0.0
+Group.nrofHosts = 0
+Group.nrofApplications = 0
+
+Group1.groupID = a
+Group1.nrofHosts = 2000
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+## EVENTS settings (message creation)
+#-----------------------------------------------------------------------------------------------------------------------
+Events.nrof = 0
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+## MOVEMENT model settings
+#-----------------------------------------------------------------------------------------------------------------------
+# seed for movement models' pseudo random number generator (default = 0)
+MovementModel.rngSeed = 1
+MovementModel.worldSize = 1000, 1000
+
+#-----------------------------------------------------------------------------------------------------------------------
+## REPORTS model settings
+#-----------------------------------------------------------------------------------------------------------------------
+Report.nrofReports = 2
+Report.reportDir = reports/
+Report.report1 = NodesMovementReport
+Report.report2 = Autonomous_MaxClientsReport

@@ -16,7 +16,8 @@ public class Autonomous_MaxClientsReport extends Report {
 
             if(h.getInterfaces().size() != 0) {
                 AutonomousHost host = (AutonomousHost) h;
-                write(AutonomousHost.SETTINGS_MAX_CLIENTS + host.name + "=" + host.getInterface().getMaxClients());
+                write(AutonomousHost.SETTINGS_NAMESPACE + "." + AutonomousHost.SETTINGS_MAX_CLIENTS + host.name
+                        + "=" + host.getInterface().getMaxClients());
             }
         }
 

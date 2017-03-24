@@ -9,7 +9,7 @@ import java.util.*;
 
 public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHost>{
 
-    private static final String SETTINGS_NAMESPACE = "AutonomousHost";
+    public static final String SETTINGS_NAMESPACE = "AutonomousHost";
     private static final String SETTINGS_DECISION_TIME_S = "decisionTime";
     public static final String SETTINGS_MAX_CLIENTS = "maxClients_";
 
@@ -64,7 +64,6 @@ public abstract class AutonomousHost extends DTNHost implements Comparable<DTNHo
         parseSettings();
 
         sendFakeMessage(this);
-        Logger.print(this, Arrays.toString(this.fakeMessagesCache.toArray()));
     }
 
     private void parseSettings(){

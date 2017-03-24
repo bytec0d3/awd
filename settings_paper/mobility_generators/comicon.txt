@@ -1,0 +1,94 @@
+#-----------------------------------------------------------------------------------------------------------------------
+## NY COMIC CON SCENARIO  (e.g., clusters + travellers)
+#
+#   TIME: 8h (28800 s)
+#-----------------------------------------------------------------------------------------------------------------------
+
+#-----------------------------------------------------------------------------------------------------------------------
+## Scenario settings
+#-----------------------------------------------------------------------------------------------------------------------
+Scenario.name = comicon_scenario
+Scenario.simulateConnections = false
+Scenario.updateInterval = 1
+Scenario.endTime = 28800
+
+Scenario.hostType = SimpleAutonomousHost
+
+AutonomousHost.decisionTime = 10
+AutonomousHost.travellingProb = 0.1
+AutonomousHost.destroyGroupAfterPercRes = 0.1
+
+AutonomousHost.utilityResourcesWeight = 0.25
+AutonomousHost.utilityNearbyNodesWeight = 0.25
+AutonomousHost.utilityCapacityNearbyWeight = 0.25
+AutonomousHost.utilityStabilityWeight = 0.25
+
+AutonomousHost.stabilityWindowSize = 300
+AutonomousHost.prevStabilityWeight = 0.4
+AutonomousHost.currentStabilityWeight = 0.6
+
+#-----------------------------------------------------------------------------------------------------------------------
+## Interface settings
+#-----------------------------------------------------------------------------------------------------------------------
+firstinterface.type = AutonomousGroupInterface
+firstinterface.transmitRange = 50
+firstinterface.transmitSpeed = 250M
+firstinterface.blacklistTime = 60
+firstinterface.generalMaxClients = 4, 15
+firstinterface.maxDelayFirstScan = 5
+firstinterface.scanInterval = 0
+
+#-----------------------------------------------------------------------------------------------------------------------
+## GROUPS settings
+#-----------------------------------------------------------------------------------------------------------------------
+Scenario.nrofHostGroups = 1
+
+Group.router = EpidemicRouter
+Group.bufferSize = 5M
+# Wait time: 5min, 2h
+Group.waitTime = 600, 7200
+Group.nrofInterfaces = 1
+Group.interface1 = firstinterface
+Group.nrofHosts = 0
+Group.nrofApplications = 0
+
+Group1.groupID = s
+Group1.movementModel = ShortestPathMapBasedMovement
+Group1.routeFile = data/comicon/t.wkt
+Group1.routeType = 1
+Group1.speed = 0, 0.5
+Group1.nrofHosts = 5000
+
+#-----------------------------------------------------------------------------------------------------------------------
+## Map based movement settings
+#-----------------------------------------------------------------------------------------------------------------------
+MapBasedMovement.nrofMapFiles = 1
+MapBasedMovement.mapFile1 = data/comicon/grid.wkt
+#MapBasedMovement.mapFile2 = data/cluster/origin.wkt
+PointsOfInterest.poiFile1 = data/comicon/all_pois.wkt
+#PointsOfInterest.poiFile2 = data/comicon/important_pois.wkt
+#Group1.pois = 1, 0.3, 2, 0.4
+
+#-----------------------------------------------------------------------------------------------------------------------
+## EVENTS settings (message creation)
+#-----------------------------------------------------------------------------------------------------------------------
+Events.nrof = 0
+
+#-----------------------------------------------------------------------------------------------------------------------
+## MOVEMENT model settings
+#-----------------------------------------------------------------------------------------------------------------------
+MovementModel.worldSize = 4000, 2000
+
+#-----------------------------------------------------------------------------------------------------------------------
+## REPORTS model settings
+#-----------------------------------------------------------------------------------------------------------------------
+Report.nrofReports = 2
+Report.reportDir = reports/
+Report.report1 = Autonomous_NodePositionReport
+Report.report2 = Autonomous_MaxClientsReport
+
+#-----------------------------------------------------------------------------------------------------------------------
+## GUI settings
+#-----------------------------------------------------------------------------------------------------------------------
+GUI.showNodeNameStrings = false
+GUI.showNodeRadioCoverages = false
