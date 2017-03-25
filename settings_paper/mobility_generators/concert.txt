@@ -1,9 +1,8 @@
 #-----------------------------------------------------------------------------------------------------------------------
-## FIXED COMMUNITY  (e.g., a big office scenario)
+## FIXED GRID  (e.g., cencert)
 #
-#   TIME: 8h (28800 s)
-#   Scenario size: 60m of radius
-#   Nodes: 20 meters
+#   TIME: 4h (14400 s)
+#   Scenario size: 50m of radius
 #   Nodes' speed: 0 m/s
 #-----------------------------------------------------------------------------------------------------------------------
 
@@ -11,30 +10,29 @@
 #-----------------------------------------------------------------------------------------------------------------------
 ## Scenario settings
 #-----------------------------------------------------------------------------------------------------------------------
-Scenario.name = grid_scenario
-Scenario.simulateConnections = true
+Scenario.name = concert_scenario
+Scenario.simulateConnections = false
 Scenario.updateInterval = 1
-Scenario.endTime = 28800
+Scenario.endTime = 14400
 Scenario.nrofHostGroups = 1
 Scenario.hostType = SimpleAutonomousHost
 AutonomousHost.decisionTime = 60
-
 
 #-----------------------------------------------------------------------------------------------------------------------
 ## Interface settings
 #-----------------------------------------------------------------------------------------------------------------------
 firstinterface.type = AutonomousGroupInterface
-firstinterface.transmitRange = 30
+firstinterface.transmitRange = 50
 firstinterface.transmitSpeed = 250M
 firstinterface.blacklistTime = 300
-firstinterface.generalMaxClients = 4, 10
+firstinterface.generalMaxClients = 4, 15
 
 
 #-----------------------------------------------------------------------------------------------------------------------
 ## GROUPS settings
 #-----------------------------------------------------------------------------------------------------------------------
 Group.movementModel = GridLocation
-Group.GridLocation.rows = 20
+Group.GridLocation.rows = 50
 Group.GridLocation.spacing = 2
 Group.GridLocation.location = 300,300
 Group.router = EpidemicRouter
@@ -68,5 +66,5 @@ MovementModel.worldSize = 1000, 1000
 #-----------------------------------------------------------------------------------------------------------------------
 Report.nrofReports = 2
 Report.reportDir = reports/
-Report.report1 = NodesMovementReport
+Report.report1 = Autonomous_NodePositionReport
 Report.report2 = Autonomous_MaxClientsReport
