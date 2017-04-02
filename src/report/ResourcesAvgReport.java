@@ -18,7 +18,7 @@ public class ResourcesAvgReport extends SnapshotReport{
         for(DTNHost h : hosts){
             AutonomousHost host = (AutonomousHost)h;
 
-            float hostResources = host.getContextManager().getBatteryLevel();
+            float hostResources = host.getContextManager().getResources();
 
             if(minResources > hostResources) minResources = hostResources;
             if(maxResources < hostResources) maxResources = hostResources;

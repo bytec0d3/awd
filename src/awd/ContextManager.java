@@ -23,7 +23,8 @@ public class ContextManager {
     private double lastStabilityUpdate;
     private double lastStabilityValue;
     private List<Integer> previousNearbyNodes; //List of addresses
-    private List<Double> jaccards = new ArrayList<>();
+    private double jaccardAvg = 0;
+    private int jaccardCounts = 0;
 
     private double lastStabilityWeight;
     private double currentStabilityWeight;
@@ -48,7 +49,11 @@ public class ContextManager {
         if(previousNearbyNodes == null) this.previousNearbyNodes = new ArrayList<>();
         else {
 
-            this.jaccards.add(jaccard(this.previousNearbyNodes, currentNearbyNodes));
+            //this.jaccards.add(jaccard(this.previousNearbyNodes, currentNearbyNodes));
+            this.jaccardAvg = (this.jaccardAvg * this.jaccardCounts) + jaccard(this.previousNearbyNodes, currentNearbyNodes);
+            this.jaccardCounts++;
+            this.jaccardAvg /= this.jaccardCounts;
+
             this.previousNearbyNodes = currentNearbyNodes;
 
             double currentTime = SimClock.getTime();
@@ -57,17 +62,21 @@ public class ContextManager {
                 //update the stability value
                 this.lastStabilityUpdate = currentTime;
 
-                OptionalDouble average = jaccards.stream().mapToDouble(a -> a).average();
-                double avg = average.isPresent() ? average.getAsDouble() : 0;
+                //OptionalDouble average = jaccards.stream().mapToDouble(a -> a).average();
+                //double avg = average.isPresent() ? average.getAsDouble() : 0;
+                double avg = this.jaccardAvg;
 
                 this.lastStabilityValue = this.lastStabilityValue * this.lastStabilityWeight + avg * this.currentStabilityWeight;
 
-                this.jaccards = new ArrayList<>();
+                this.jaccardAvg = 0;
+                this.jaccardCounts = 0;
+
+                //this.jaccards = new ArrayList<>();
             }
         }
     }
 
-    private double jaccard(Collection<Integer> previous, Collection<Integer> current){
+    private double jaccard(List<Integer> previous, List<Integer> current){
 
         double jac = 0;
         if(previous.size() != 0 || current.size() != 0)
@@ -76,8 +85,7 @@ public class ContextManager {
     }
 
     void updateContext(AutonomousHost.HOST_STATUS currentStatus,
-                              Set<DTNHost> group,
-                              List<Integer> nearbyNodes){
+                              Set<DTNHost> group, List<Integer> nearbyNodes){
 
         int currentTime = (int) SimClock.getTime();
         double drop = 0;
@@ -111,8 +119,6 @@ public class ContextManager {
         }
     }
 
-    public float getBatteryLevel(){ return this.battery; }
-
     private double getScanningDrop(float hourDelta){
 
         return 1.0 - (SCAN_SLOPE*hourDelta + SCAN_INTERCEPT);
@@ -142,7 +148,7 @@ public class ContextManager {
         return previousNearbyNodes;
     }
 
-    float getResources() {
+    public float getResources() {
         return battery;
     }
 

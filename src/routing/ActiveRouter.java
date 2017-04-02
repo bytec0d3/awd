@@ -42,7 +42,7 @@ public abstract class ActiveRouter extends MessageRouter {
 	/** how often TTL check (discarding old messages) is performed */
 	public static int TTL_CHECK_INTERVAL = 60;
 	/** connection(s) that are currently used for sending */
-	protected ArrayList<Connection> sendingConnections;
+	public ArrayList<Connection> sendingConnections;
 	/** sim time when the last TTL check was done */
 	private double lastTtlCheck;
 

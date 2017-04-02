@@ -15,14 +15,13 @@ import java.util.List;
  */
 public class Autonomous_FakeMessagesReport extends SnapshotReport  {
 
-    private List<Pair<Double, Double>> avgs = new ArrayList<>();
     private boolean first=true;
 
     @Override
     public void createSnapshot(List<DTNHost> hosts) {
 
         if(first){
-            avgs.add(new Pair<>(0.0, 0.0));
+            write("0.0 0.0");
             first = false;
         }
 
@@ -35,18 +34,11 @@ public class Autonomous_FakeMessagesReport extends SnapshotReport  {
             }
         }
 
-        avgs.add(new Pair<>(SimClock.getTime(), avg/(float)hosts.size()));
+        write(String.format("%.2f", SimClock.getTime()) + " " + String.format("%.2f", avg/(float)hosts.size()));
     }
 
     @Override
     protected void writeSnapshot(DTNHost host) {
 
-    }
-
-    public void done() {
-        for (Pair<Double, Double> avg : avgs)
-            write(String.format("%.2f", avg.getKey()) + " " + String.format("%.2f", avg.getValue()));
-
-        super.done();
     }
 }

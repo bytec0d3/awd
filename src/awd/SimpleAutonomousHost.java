@@ -1,6 +1,7 @@
 package awd;
 
 import core.*;
+import javafx.util.Pair;
 import movement.MovementModel;
 import routing.MessageRouter;
 
@@ -34,12 +35,12 @@ public class SimpleAutonomousHost extends AutonomousHost {
         // Look for an AP just if I'm not already connected to someone
         if(getCurrentStatus() == HOST_STATUS.AP && this.getGroup() == null) {
 
-            //Logger.print(this, "Looking for someone to connect");
-
             AutonomousHost candidate = null;
 
             if (nodes != null) {
-                List<AutonomousHost> availableGroups = getInterface().getAvailableGroups(nodes);
+                Pair<List<AutonomousHost>, List<AutonomousHost>> available = getInterface().getAvailableNodes(nodes);
+                List<AutonomousHost> availableGroups = available.getKey();
+                List<AutonomousHost> availableSinglets = available.getValue();
 
                 if (availableGroups != null) {
 
@@ -48,7 +49,6 @@ public class SimpleAutonomousHost extends AutonomousHost {
 
                 } else {
 
-                    List<AutonomousHost> availableSinglets = getInterface().getAvailableSinglets(nodes);
                     if (availableSinglets != null) {
                         availableSinglets.add(this);
                         availableSinglets.sort(Comparators.addressComparator);
@@ -56,8 +56,7 @@ public class SimpleAutonomousHost extends AutonomousHost {
                     }
                 }
 
-                if (candidate != null && candidate != this) {
-                    //Logger.print(this, "Connecting to " + candidate);
+                if (candidate != null && candidate != this && candidate.haveFreeSlots()) {
                     forceConnection(candidate, candidate.getInterface().getInterfaceType(), true);
                 }
             }

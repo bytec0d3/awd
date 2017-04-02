@@ -1,6 +1,7 @@
 package awd;
 
 import core.*;
+import javafx.util.Pair;
 import movement.MovementModel;
 import org.apache.commons.collections4.CollectionUtils;
 import routing.MessageRouter;
@@ -32,10 +33,6 @@ public class CompleteAutonomousHost extends AutonomousHost {
 
     private int travelling, merges;
 
-    //Merge
-    private AutonomousHost hostToMerge;
-    private int mergePositiveResponses;
-
     private Random random;
 
     /**
@@ -65,7 +62,11 @@ public class CompleteAutonomousHost extends AutonomousHost {
             AutonomousHost candidate = null;
 
             if (nodes != null) {
-                List<AutonomousHost> availableGroups = getInterface().getAvailableGroups(nodes);
+                //List<AutonomousHost> availableGroups = getInterface().getAvailableGroups(nodes);
+
+                Pair<List<AutonomousHost>, List<AutonomousHost>> available = getInterface().getAvailableNodes(nodes);
+                List<AutonomousHost> availableGroups = available.getKey();
+                List<AutonomousHost> availableSinglets = available.getValue();
 
                 if (availableGroups != null) {
 
@@ -74,7 +75,6 @@ public class CompleteAutonomousHost extends AutonomousHost {
 
                 } else {
 
-                    List<AutonomousHost> availableSinglets = getInterface().getAvailableSinglets(nodes);
                     if (availableSinglets != null) {
                         availableSinglets.add(this);
                         availableSinglets.sort(Comparators.contextAndNameComparator);
@@ -82,7 +82,7 @@ public class CompleteAutonomousHost extends AutonomousHost {
                     }
                 }
 
-                if (candidate != null && candidate != this) {
+                if (candidate != null && candidate != this && candidate.haveFreeSlots()) {
                     forceConnection(candidate, candidate.getInterface().getInterfaceType(), true);
                 }
             }
@@ -137,33 +137,10 @@ public class CompleteAutonomousHost extends AutonomousHost {
                         .orElse(null);
 
                 if(bestCandidate.getService().getUtilityValue() > this.getService().getUtilityValue()) {
-                    //Logger.print(this, "======================================================");
-                    //Logger.print(this, "Intention to merge to "+bestCandidate.name);
-                    //Logger.print(this, "group: "+printGroup());
-                    //Logger.print(this, "======================================================");
                     sendVisibilityQuery(bestCandidate);
                 }
             }
         }
-
-        /*
-        if(availableGroups != null) {
-            availableGroups.removeIf((AutonomousHost host) -> host.getService().getAvailableSlots() >= minSize);
-
-            if (availableGroups.size() != 0) {
-                AutonomousHost hostToMerge = Collections.max(availableGroups,
-                        Comparator.comparing(host -> host.getService().getGroupMembers().size()));
-
-                sendVisibilityQuery(hostToMerge);
-            }
-        }*/
-    }
-
-    private String printGroup(){
-        List<String> g = new ArrayList<>();
-        for(DTNHost h : this.getGroup()) g.add(h.name);
-
-        return Arrays.toString(g.toArray());
     }
 
     public void update(boolean simulateConnections) {
@@ -176,7 +153,7 @@ public class CompleteAutonomousHost extends AutonomousHost {
 
     private void checkGroupResources(){
 
-        if(this.startGroupResources - this.contextManager.getBatteryLevel() >= this.maxGroupResources) {
+        if(this.startGroupResources - this.contextManager.getResources() >= this.maxGroupResources) {
             //Logger.print(this, "Group resources limit reached");
             destroyGroup();
         }
@@ -185,8 +162,13 @@ public class CompleteAutonomousHost extends AutonomousHost {
     @Override
     void takeDecision() {
 
+        long time = 0;
+
         if(getCurrentStatus() == HOST_STATUS.AP && this.getGroup() == null){
+
+            time = new Date().getTime();
             evaluateNearbyNodes(getInterface().getNearbyInterfaces());
+            ExecTime.getInstance().setEvalNearbyNodesAvg(new Date().getTime() - time);
 
         }else{
 
@@ -195,11 +177,15 @@ public class CompleteAutonomousHost extends AutonomousHost {
             if(CollectionUtils.subtract(getInterface().getNearbyHosts(), currentGroup).size() != 0) {
                 // If I am a client and there are other groups in the nearby, evaluate to become a traveller
                 if (getCurrentStatus() == HOST_STATUS.CONNECTED) {
+                    time = new Date().getTime();
                     evaluateTravelling();
+                    ExecTime.getInstance().setEvalTravellingAvg(new Date().getTime() - time);
 
                 } else if (getCurrentStatus() == HOST_STATUS.AP && this.getGroup() != null) {
                     // If I am a GO, evaluate to merge my group with another one
+                    time = new Date().getTime();
                     evaluateMerge();
+                    ExecTime.getInstance().setEvalMergeAvg(new Date().getTime() - time);
                 }
             }
         }
@@ -227,100 +213,53 @@ public class CompleteAutonomousHost extends AutonomousHost {
                 +this.getContextManager().getLastStabilityValue()*stabilityWeight;
     }
 
+    //------------------------------------------------------------------------------------------------------------------
+    // MERGE MENAGEMENT
+    //------------------------------------------------------------------------------------------------------------------
+    boolean visibilityQuery(AutonomousHost host){
+
+        return this.getInterface().getNearbyHosts().contains(host);
+    }
+
+    void mergeIntent(AutonomousHost hostToMerge){
+
+        if(this.visibilityQuery(hostToMerge)) {
+            destroyGroup();
+            if(hostToMerge.haveFreeSlots())
+                forceConnection(hostToMerge, hostToMerge.getInterface().getInterfaceType(), true);
+                //this.getInterface().connect(hostToMerge.getInterface());
+        }
+
+    }
 
     //------------------------------------------------------------------------------------------------------------------
     // MESSAGE MENAGEMENT
     //------------------------------------------------------------------------------------------------------------------
-    private void sendVisibilityQuery(AutonomousHost host){
+    private void sendVisibilityQuery(AutonomousHost hostToMerge) {
 
-        this.hostToMerge = host;
-        this.mergePositiveResponses = 0;
+        int positive = 0;
 
-        List<DTNHost> members = new ArrayList<>();
-        members.addAll(this.getGroup());
+        for (DTNHost h : this.getGroup()) {
 
-        members.forEach((node) -> {
-            if(this.getGroup() != null && this.getGroup().contains(node)) {
-                //Logger.print(this, "Send visibility message to " + node.name);
-                String messageId = VISIBILITY_QUERY_MESSAGE_ID + ":" + System.currentTimeMillis() + ":" + host.getAddress();
-                Message message = new Message(this, node, messageId, 0);
-                createNewMessage(message);
-                sendMessage(messageId, node);
-            }
-        });
-    }
-
-    private void sendVisibilityResponse(boolean visibility, DTNHost node){
-
-        int visible = (visibility) ? 1 : 0;
-        String messageId = VISIBILITY_RESPONSE_MESSAGE_ID + ":" + System.currentTimeMillis() + new Random().nextInt(9000)+ ":" + visible;
-        Message message = new Message(this, node, messageId, 0);
-        createNewMessage(message);
-        sendMessage(messageId, node);
-    }
-
-    private void sendMergeIntent(int nodeAddress){
-
-        if(this.getGroup() != null){
-
-            List<DTNHost> hostToNotify = new ArrayList<>();
-            hostToNotify.addAll(this.getGroup());
-
-            for(DTNHost host : hostToNotify){
-                String messageId = MERGE_INTENT_MESSAGE_ID +":"+System.currentTimeMillis()+":"+nodeAddress;
-                Message message = new Message(this, host, messageId, 0);
-                createNewMessage(message);
-                sendMessage(messageId, host);
-            }
-        }
-    }
-
-
-    void handleVisibilityQueryMessage(Message message, AutonomousHost host){
-
-        int address = Integer.parseInt(message.getId().split(":")[2]);
-
-        boolean visible = false;
-
-        for(NetworkInterface nearbyInterface : getInterface().getNearbyInterfaces()){
-            if(nearbyInterface.getHost().getAddress() == address){
-                visible = true;
-                this.hostToMerge = (AutonomousHost)nearbyInterface.getHost();
-                break;
-            }
+            CompleteAutonomousHost hostInGroup = (CompleteAutonomousHost) h;
+            if (hostInGroup.visibilityQuery(hostToMerge)) positive++;
         }
 
-        //Logger.print(this, "Visibility check for "+address+": "+visible);
+        if (positive >= (this.getGroup().size() / 2) + 1) {
 
-        sendVisibilityResponse(visible, host);
-    }
+            List<DTNHost> myGroup = new ArrayList<>();
+            myGroup.addAll(this.getGroup());
 
-    void handleVisibilityResponse(Message message, AutonomousHost host){
+            for (DTNHost h : myGroup) {
+                CompleteAutonomousHost hostInGroup = (CompleteAutonomousHost) h;
+                hostInGroup.mergeIntent(hostToMerge);
+            }
 
-        int visibility = Integer.parseInt(message.getId().split(":")[2]);
-        if(visibility == 1) this.mergePositiveResponses++;
-
-        //Logger.print(this, message.getFrom()+": "+ ((visibility == 0)? "FALSE" : "TRUE"));
-
-        if(this.mergePositiveResponses >= (this.getGroup().size() / 2) + 1){
-            sendMergeIntent(this.hostToMerge.getAddress());
-            //Logger.print(this, "Destroying group");
             destroyGroup();
-            this.getInterface().connect(this.hostToMerge.getInterface());
-            //Logger.print(this, "Merge to "+this.hostToMerge);
+            if(hostToMerge.haveFreeSlots())
+                forceConnection(hostToMerge, hostToMerge.getInterface().getInterfaceType(), true);
+                //this.getInterface().connect(hostToMerge.getInterface());
             this.merges++;
-            //Logger.print(this, "======================================================");
-            //Logger.print(this, "End merge");
-            //Logger.print(this, "======================================================");
-        }
-    }
-
-    void handleMergeIntent(Message message, AutonomousHost host){
-
-        if(this.hostToMerge != null) {
-            this.getInterface().connect(this.hostToMerge.getInterface());
-            //Logger.print(this, "Following the AP and merge to "+this.hostToMerge);
-            destroyGroup();
         }
     }
 
@@ -328,7 +267,7 @@ public class CompleteAutonomousHost extends AutonomousHost {
     // GROUP RESOURCES
     //------------------------------------------------------------------------------------------------------------------
     void openGroupResources(){
-        this.startGroupResources = this.contextManager.getBatteryLevel();
+        this.startGroupResources = this.contextManager.getResources();
     }
 
     void closeGroupResources(){

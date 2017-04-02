@@ -2,6 +2,7 @@ package interfaces;
 
 import awd.AutonomousHost;
 import core.*;
+import javafx.util.Pair;
 import util.RandomGen;
 
 import java.util.*;
@@ -90,6 +91,7 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
     }
 
     public Collection<NetworkInterface> getNearbyInterfaces(){return this.nearbyInterfaces; }
+
     public List<Integer> getNearbyNodes(){
         List<Integer> hosts = new ArrayList<>();
 
@@ -260,23 +262,36 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
         return true;
     }
 
-    public List<AutonomousHost> getAvailableGroups(Collection<NetworkInterface> nodes){
+    public Pair<List<AutonomousHost>, List<AutonomousHost>> getAvailableNodes(Collection<NetworkInterface> nodes){
 
-        List<AutonomousHost> groups = new ArrayList<>();
+        List<AutonomousHost> groups = null;
+        List<AutonomousHost> singlets = null;
 
         for (NetworkInterface i : nodes) {
-            AutonomousHost otherHost = (AutonomousHost)i.getHost();
+            AutonomousHost otherHost = (AutonomousHost) i.getHost();
 
             if(this != i && isWithinRange(i) &&
                     otherHost.getService().getHostStatus() == AutonomousHost.HOST_STATUS.AP &&
                     otherHost.getService().getGroupMembers().size() > 0 &&
                     otherHost.getService().getAvailableSlots() > 0 &&
-                    isScanning() && i.getHost().isRadioActive() && !isInBlackList(otherHost))
+                    isScanning() && i.getHost().isRadioActive() && !isInBlackList(otherHost)) {
 
+                if (groups == null) groups = new ArrayList<>();
                 groups.add(otherHost);
+            }
+
+            if(this != i && isWithinRange(i) &&
+                    otherHost.getService().getHostStatus() == AutonomousHost.HOST_STATUS.AP &&
+                    otherHost.getService().getGroupMembers().size() == 0 &&
+                    isScanning() && i.getHost().isRadioActive() && !isConnected(i) && !isInBlackList(otherHost)) {
+
+                if (singlets == null) singlets = new ArrayList<>();
+                singlets.add(otherHost);
+            }
         }
 
-        return (groups.size() == 0) ? null : groups;
+
+        return new Pair<>(groups, singlets);
     }
 
     public List<AutonomousHost> getAvailableGOs(Collection<NetworkInterface> nodes){
@@ -295,24 +310,6 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
         }
 
         return (groups.size() == 0) ? null : groups;
-    }
-
-    public List<AutonomousHost> getAvailableSinglets(Collection<NetworkInterface> nodes){
-
-        List<AutonomousHost> singlets = new ArrayList<>();
-
-        for (NetworkInterface i : nodes) {
-            AutonomousHost otherHost = (AutonomousHost)i.getHost();
-
-            if(this != i && isWithinRange(i) &&
-                    otherHost.getService().getHostStatus() == AutonomousHost.HOST_STATUS.AP &&
-                    otherHost.getService().getGroupMembers().size() == 0 &&
-                    isScanning() && i.getHost().isRadioActive() && !isConnected(i) && !isInBlackList(otherHost))
-
-                singlets.add(otherHost);
-        }
-
-        return (singlets.size() == 0) ? null : singlets;
     }
 
     public void leaveCurrentGroup(){
@@ -369,24 +366,4 @@ public class AutonomousGroupInterface extends SimpleBroadcastInterface {
             this.interfaceToConnect = null;
         }
     }
-
-    /**
-     * Just for GeoAdjencyReport
-     *
-     * @return  the Collection of DTNHost in the communication range
-     */
-    public Collection<DTNHost> getGeoNearbyNodes(){
-
-        Collection<DTNHost> nearbyHosts = new ArrayList<>();
-
-        for(NetworkInterface networkInterface : optimizer.getNearInterfaces(this)){
-
-            if(isWithinRange(networkInterface) && networkInterface != this) nearbyHosts.add(networkInterface.getHost());
-
-        }
-
-        return nearbyHosts;
-
-    }
-
 }

@@ -344,6 +344,10 @@ public class DTNHost implements Comparable<DTNHost> {
 				i.update();
 			}
 		}
+		this.router.incomingMessages.clear();
+		this.router.messages.clear();
+		this.router.deliveredMessages.clear();
+		this.router.blacklistedMessages.clear();
 		this.router.update();
 	}
 

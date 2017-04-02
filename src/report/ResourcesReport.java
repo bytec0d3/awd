@@ -14,7 +14,7 @@ public class ResourcesReport extends SnapshotReport{
             AutonomousHost host = (AutonomousHost)h;
 
             write("" + String.format("%.2f", SimClock.getTime()) + " " + host.name
-                    + " " + String.format("%.2f", host.getContextManager().getBatteryLevel()));
+                    + " " + String.format("%.2f", host.getContextManager().getResources()));
 
         }
     }

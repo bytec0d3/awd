@@ -1,0 +1,73 @@
+#-----------------------------------------------------------------------------------------------------------------------
+## Scenario settings
+#-----------------------------------------------------------------------------------------------------------------------
+Scenario.name = test
+Scenario.endTime = 28800
+Scenario.simulateConnections = true
+Scenario.updateInterval = 1
+Scenario.simulateConnections = true
+Scenario.nrofHostGroups = 1
+Scenario.hostType = SimpleAutonomousHost
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+## Movement model settings
+#-----------------------------------------------------------------------------------------------------------------------
+MovementModel.rngSeed = 1
+MovementModel.worldSize = 1000, 1000
+MovementModel.warmup = 0
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+## Interface settings
+#-----------------------------------------------------------------------------------------------------------------------
+firstinterface.type = AutonomousGroupInterface
+firstinterface.transmitSpeed = 250M
+firstinterface.generalMaxClients = 3, 8
+firstinterface.maxDelayFirstScan = 5
+firstinterface.scanInterval = 0
+firstinterface.blacklistTime = 60
+firstinterface.transmitRange = 50
+AutonomousHost.decisionTime = 10
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+## AutonomousHost settings
+#-----------------------------------------------------------------------------------------------------------------------
+AutonomousHost.travellingProb = 0.1
+AutonomousHost.destroyGroupAfterPercRes = 0.1
+
+AutonomousHost.utilityResourcesWeight = 0.25
+AutonomousHost.utilityNearbyNodesWeight = 0.25
+AutonomousHost.utilityCapacityNearbyWeight = 0.25
+AutonomousHost.utilityStabilityWeight = 0.25
+
+AutonomousHost.stabilityWindowSize = 300
+AutonomousHost.prevStabilityWeight = 0.4
+AutonomousHost.currentStabilityWeight = 0.6
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+## GROUPS settings
+#-----------------------------------------------------------------------------------------------------------------------
+Group.movementModel = ClusterMovement
+Group.router = EpidemicRouter
+Group.bufferSize = 5M
+Group.nrofHosts = 0
+Group.nrofApplications = 0
+Group.nrofInterfaces = 1
+Group.interface1 = firstinterface
+
+Group1.groupID = a
+Group1.clusterCenter = 600, 100
+Group1.clusterRange = 50
+Group1.nrofHosts = 10
+Group1.speed = 0.0, 0.0
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+## EVENTS settings
+#-----------------------------------------------------------------------------------------------------------------------
+Events.nrof = 0
+
+Report.nrofReports = 0
